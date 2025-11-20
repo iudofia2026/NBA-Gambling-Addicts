@@ -255,14 +255,19 @@ pip install pandas numpy scikit-learn xgboost matplotlib seaborn jupyter
 git clone <repo-url>
 cd NBA-Gambling-Addicts
 
-# 2. Data is already included in data/raw/
-# Verify datasets are present:
-ls data/raw/
+# 2. Install dependencies
+pip install -r requirements.txt
 
-# 3. Start with exploratory notebook
+# 3. Download the raw datasets from Kaggle (see data/raw/README.md for details)
+#    Example:
+#    kaggle datasets download -d eoinamoore/historical-nba-data-and-player-box-scores -p data/raw
+#    kaggle datasets download -d wyattowalsh/basketball -p data/raw
+#    unzip *.zip
+
+# 4. Start with exploratory notebook
 jupyter notebook notebooks/01_data_exploration.ipynb
 
-# 4. Follow the phase-by-phase development plan
+# 5. Follow the phase-by-phase development plan
 ```
 
 ### Repository Structure

@@ -1,27 +1,28 @@
 # Raw Data Directory
 
-This directory contains the raw NBA datasets downloaded from Kaggle.
+This directory contains the unmodified NBA datasets pulled from Kaggle. The large files
+are ignored by git to keep the repository lightweight.
 
 ## Required Datasets
 
 1. **Historical NBA Data and Player Box Scores**
    - Source: https://www.kaggle.com/datasets/eoinamoore/historical-nba-data-and-player-box-scores/data
-   - Key files: `games_details.csv`, team statistics, player game logs
+   - Key files: `games_details.csv`, `games.csv`, `players.csv`, `teams.csv`
 
 2. **Basketball Reference Dataset**
    - Source: https://www.kaggle.com/datasets/wyattowalsh/basketball/data
-   - Key files: Team statistics, advanced metrics
+   - Key files: Team statistics, advanced metrics, play-by-play data
 
-## Setup Instructions
+## Manual Download Instructions
 
-1. Install Kaggle CLI: `pip install kaggle`
-2. Set up Kaggle credentials (kaggle.json in ~/.kaggle/)
-3. Download datasets:
+1. Install the Kaggle CLI: `pip install kaggle`
+2. Configure Kaggle credentials (kaggle.json in `~/.kaggle/` or export `KAGGLE_USERNAME`/`KAGGLE_KEY`)
+3. Download each dataset:
    ```bash
-   kaggle datasets download -d eoinamoore/historical-nba-data-and-player-box-scores
-   kaggle datasets download -d wyattowalsh/basketball
+   kaggle datasets download -d eoinamoore/historical-nba-data-and-player-box-scores -p data/raw
+   kaggle datasets download -d wyattowalsh/basketball -p data/raw
    ```
-4. Extract files to this directory
+4. Extract the resulting `.zip` files directly into this directory
 
 ## File Structure (After Download)
 ```
