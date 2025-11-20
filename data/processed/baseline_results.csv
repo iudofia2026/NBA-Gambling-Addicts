@@ -1,0 +1,2 @@
+season_average_accuracy,rolling_5g_accuracy,random_accuracy,best_baseline,beat_random,avg_player_accuracy,best_player_accuracy,worst_player_accuracy
+0.5039252336448599,0.6388785046728972,0.5136448598130842,Rolling 5-Game,0.12523364485981303,0.503614979316579,0.559322033898305,0.45454545454545453
