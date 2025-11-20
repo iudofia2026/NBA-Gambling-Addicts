@@ -120,9 +120,11 @@ A machine learning system that predicts whether NBA players will score "over" or
 ### Phase 1: Foundation (Nov 10-14) - 6-8 hours
 - [x] **Data Acquisition**: Download and extract NBA datasets
 - [x] **Project Setup**: Repository structure, README, initial documentation
+- [x] **Player Selection**: Target players selected (13 players)
+  - **Selected Players**: Mikal Bridges, Buddy Hield, Harrison Barnes, Nikola Jokić, James Harden, Rudy Gobert, Nikola Vučević, Tobias Harris, Devin Booker, Karl-Anthony Towns, Jrue Holiday, Stephen Curry, Kevin Durant
+  - **Environment**: Working in prod-2 branch
 - [ ] **Data Exploration**: Initial EDA on key files (PlayerStatistics.csv, Games.csv)
-- [ ] **Player Selection**: Choose 20-50 target players for MVP
-- [ ] **Threshold Definition**: Define point thresholds for each player
+- [ ] **Threshold Definition**: Define point thresholds for each selected player
 
 ### Phase 2: Data Pipeline (Nov 15-21) - 10-12 hours
 - [ ] **Data Cleaning**: Handle missing values, data quality issues

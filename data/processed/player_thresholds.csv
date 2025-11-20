@@ -1,0 +1,14 @@
+player_display_name,player_dataset_name,total_active_games,avg_points,median_points,std_points,proposed_threshold,over_games,under_games,over_percentage,recent_games_2024_25,date_range_start,date_range_end
+Mikal Bridges,Mikal Bridges,650,14.61,14.0,7.96,14.61,303,347,46.6,122,2018-10-01 22:00:00,2025-11-19T21:30:00Z
+Buddy Hield,Buddy Hield,797,14.61,15.0,7.53,14.61,400,397,50.2,123,2016-10-01 20:01:00,2025-11-19T19:30:00Z
+Harrison Barnes,Harrison Barnes,1143,13.42,13.0,6.96,13.42,517,626,45.2,104,2012-10-07 22:00:00,2025-11-18T20:00:00Z
+Nikola Jokić,Nikola Jokic,898,22.01,22.0,9.98,22.01,434,464,48.3,106,2015-10-02 22:30:00,2025-11-19T20:00:00Z
+James Harden,James Harden,1404,23.58,23.0,10.86,23.58,670,734,47.7,105,2009-10-07 20:00:00,2025-11-17T19:00:00Z
+Rudy Gobert,Rudy Gobert,977,12.46,12.0,6.07,12.46,477,500,48.8,109,2013-10-08 21:00:00,2025-11-19T20:00:00Z
+Nikola Vučević,Nikola Vucevic,1078,16.84,17.0,7.32,16.84,543,535,50.4,96,2011-12-16 19:00:00,2025-11-19T22:00:00Z
+Tobias Harris,Tobias Harris,1102,15.9,16.0,7.12,15.9,577,525,52.4,91,2011-12-17 20:00:00,2025-11-01T22:00:00Z
+Devin Booker,Devin Booker,770,24.35,24.0,10.09,24.35,371,399,48.2,96,2015-10-07 22:00:00,2025-11-18T23:00:00Z
+Karl-Anthony Towns,Karl-Anthony Towns,753,22.39,22.0,8.01,22.39,366,387,48.6,111,2015-10-07 20:00:00,2025-11-19T21:30:00Z
+Jrue Holiday,Jrue Holiday,1221,15.56,15.0,7.4,15.56,570,651,46.7,89,2009-10-06 19:30:00,2025-11-19T22:00:00Z
+Stephen Curry,Stephen Curry,1278,24.6,24.0,9.87,24.6,633,645,49.5,100,2009-10-04 21:00:00,2025-11-18T19:00:00Z
+Kevin Durant,Kevin Durant,1379,26.99,27.0,7.92,26.99,716,663,51.9,81,2007-10-09 22:00:00,2025-11-19T19:00:00Z
