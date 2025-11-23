@@ -1,0 +1,77 @@
+feature,importance,model,category
+rolling_10g_fieldGoalsAttempted,0.8048187383877626,Logistic Regression,Rolling Shooting Stats
+rolling_10g_points,0.7915373551188944,Logistic Regression,Rolling Points Averages
+vs_threshold_trend_5g,0.5824588319923145,Logistic Regression,Momentum/Streaks
+rolling_3g_points,0.5792780531252213,Logistic Regression,Rolling Points Averages
+rolling_10g_fieldGoalsMade,0.46720850514865586,Logistic Regression,Rolling Shooting Stats
+rolling_5g_points,0.46539412494292043,Logistic Regression,Rolling Points Averages
+rolling_5g_fieldGoalsMade,0.36028774484577125,Logistic Regression,Rolling Shooting Stats
+vs_threshold_trend_3g,0.34302664355727297,Logistic Regression,Momentum/Streaks
+rolling_10g_numMinutes,0.3391605177457649,Logistic Regression,Other Rolling Stats
+rolling_10g_fg_pct,0.2570653805012427,Logistic Regression,Rolling Shooting Stats
+rolling_3g_numMinutes,0.25525864691927996,Logistic Regression,Other Rolling Stats
+rolling_5g_assists,0.2186229884959263,Logistic Regression,Other Rolling Stats
+rolling_3g_assists,0.16767570322486391,Logistic Regression,Other Rolling Stats
+rolling_5g_numMinutes,0.14727725532279956,Logistic Regression,Other Rolling Stats
+rolling_3g_fieldGoalsAttempted,0.1459429207044302,Logistic Regression,Rolling Shooting Stats
+games_last_7d,0.10066668785465469,Logistic Regression,Rest/Schedule
+rolling_10g_assists,0.09982627012239116,Logistic Regression,Other Rolling Stats
+over_streak_last_5g,0.08744999069408324,Logistic Regression,Momentum/Streaks
+days_since_season_start,0.07685212742633205,Logistic Regression,Temporal/Seasonal
+season_progression,0.07685212742632977,Logistic Regression,Temporal/Seasonal
+points_volatility_10g,0.06559108073797848,Logistic Regression,Consistency Metrics
+rolling_5g_fieldGoalsAttempted,0.06463358007847222,Logistic Regression,Rolling Shooting Stats
+month,0.06430049298622761,Logistic Regression,Temporal/Seasonal
+hot_streak,0.053522231634829665,Logistic Regression,Momentum/Streaks
+rolling_5g_fg_pct,0.04378017244138004,Logistic Regression,Rolling Shooting Stats
+days_rest,0.04087369682256722,Logistic Regression,Rest/Schedule
+rolling_3g_fieldGoalsMade,0.03373007246367844,Logistic Regression,Rolling Shooting Stats
+games_last_14d,0.03208423547095564,Logistic Regression,Rest/Schedule
+is_back_to_back,0.026227349280114633,Logistic Regression,Rest/Schedule
+recent_3pt_hot,0.02381830450020906,Logistic Regression,Hot/Cold Indicators
+points_volatility_5g,0.01753028157693863,Logistic Regression,Consistency Metrics
+cold_streak,0.015563185086742558,Logistic Regression,Momentum/Streaks
+is_weekend,0.013880729731876634,Logistic Regression,Other
+good_form,0.013868870548802623,Logistic Regression,Hot/Cold Indicators
+rolling_3g_fg_pct,0.008989338406630923,Logistic Regression,Rolling Shooting Stats
+day_of_week,0.006812913397836164,Logistic Regression,Temporal/Seasonal
+over_streak_last_3g,0.005981426602437775,Logistic Regression,Momentum/Streaks
+recent_fg_hot,0.004716948837390003,Logistic Regression,Hot/Cold Indicators
+vs_threshold_trend_5g,0.06662689312877419,Random Forest,Momentum/Streaks
+vs_threshold_trend_3g,0.05867714885290607,Random Forest,Momentum/Streaks
+rolling_10g_points,0.048273943976520434,Random Forest,Rolling Points Averages
+rolling_10g_fg_pct,0.04632584397483166,Random Forest,Rolling Shooting Stats
+points_volatility_10g,0.04610075270187721,Random Forest,Consistency Metrics
+rolling_10g_fieldGoalsAttempted,0.04571277362924211,Random Forest,Rolling Shooting Stats
+rolling_5g_fg_pct,0.0449373940688665,Random Forest,Rolling Shooting Stats
+rolling_10g_numMinutes,0.04462319335079806,Random Forest,Other Rolling Stats
+points_volatility_5g,0.044461770559597776,Random Forest,Consistency Metrics
+rolling_3g_fg_pct,0.043223079246257234,Random Forest,Rolling Shooting Stats
+rolling_5g_numMinutes,0.04292747417367253,Random Forest,Other Rolling Stats
+rolling_10g_fieldGoalsMade,0.04198030551071119,Random Forest,Rolling Shooting Stats
+rolling_3g_numMinutes,0.041406797322113324,Random Forest,Other Rolling Stats
+rolling_10g_assists,0.038525574349254556,Random Forest,Other Rolling Stats
+rolling_5g_fieldGoalsAttempted,0.03813564300428762,Random Forest,Rolling Shooting Stats
+rolling_5g_points,0.03796428686417187,Random Forest,Rolling Points Averages
+rolling_3g_fieldGoalsAttempted,0.03670737872102128,Random Forest,Rolling Shooting Stats
+rolling_3g_points,0.0344439603135746,Random Forest,Rolling Points Averages
+rolling_5g_assists,0.03367785445292759,Random Forest,Other Rolling Stats
+rolling_3g_assists,0.03106275886195603,Random Forest,Other Rolling Stats
+rolling_5g_fieldGoalsMade,0.031020693351253625,Random Forest,Rolling Shooting Stats
+rolling_3g_fieldGoalsMade,0.026746138275878396,Random Forest,Rolling Shooting Stats
+over_streak_last_5g,0.02113607736904079,Random Forest,Momentum/Streaks
+good_form,0.014505961485777628,Random Forest,Hot/Cold Indicators
+over_streak_last_3g,0.011541167641004215,Random Forest,Momentum/Streaks
+cold_streak,0.007125569038035245,Random Forest,Momentum/Streaks
+recent_3pt_hot,0.006045370480747099,Random Forest,Hot/Cold Indicators
+recent_fg_hot,0.0054856443372750235,Random Forest,Hot/Cold Indicators
+hot_streak,0.003657786457754263,Random Forest,Momentum/Streaks
+games_last_14d,0.0014604279746173597,Random Forest,Rest/Schedule
+season_progression,0.0011244883762001102,Random Forest,Temporal/Seasonal
+days_since_season_start,0.0009867269787252348,Random Forest,Temporal/Seasonal
+games_last_7d,0.0008970220616025415,Random Forest,Rest/Schedule
+days_rest,0.0007691140290806759,Random Forest,Rest/Schedule
+day_of_week,0.0007387959586121968,Random Forest,Temporal/Seasonal
+month,0.0005804602503840389,Random Forest,Temporal/Seasonal
+is_back_to_back,0.00023490206673987556,Random Forest,Rest/Schedule
+is_weekend,0.00014882680390998474,Random Forest,Other
