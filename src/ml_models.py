@@ -9,6 +9,57 @@ This module implements machine learning models for NBA over/under predictions:
 Includes comprehensive evaluation, hyperparameter tuning, and interpretability analysis.
 """
 
+# Bootstrap helper: if running in an environment with incompatible compiled
+# extensions (e.g., NumPy 2 while some wheels were compiled against NumPy 1.x),
+# create a local virtualenv, install pinned requirements, and re-exec the script
+# using that venv's Python. This allows users to run `python src/ml_models.py`
+# and have the repo self-bootstrap a working environment.
+import sys
+import subprocess
+import os
+
+if os.environ.get("NBA_BOOTSTRAPPED") != "1":
+    need_bootstrap = False
+    try:
+        import numpy as _np
+        # If major version is 2 or higher, prefer bootstrapping to a controlled venv
+        major = int(_np.__version__.split('.')[0])
+        if major >= 2:
+            need_bootstrap = True
+    except Exception:
+        need_bootstrap = True
+
+    if need_bootstrap:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        venv_dir = os.path.join(repo_root, '.venv')
+        venv_python = os.path.join(venv_dir, 'bin', 'python')
+
+        print('\nDetected incompatible or missing scientific packages. Bootstrapping a local virtualenv:', venv_dir)
+
+        try:
+            if not os.path.exists(venv_dir):
+                subprocess.check_call([sys.executable, '-m', 'venv', venv_dir])
+
+            # Upgrade pip/wheel/setuptools then install requirements
+            subprocess.check_call([venv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'wheel', 'setuptools'])
+            req_file = os.path.join(repo_root, 'requirements.txt')
+            subprocess.check_call([venv_python, '-m', 'pip', 'install', '-r', req_file])
+        except subprocess.CalledProcessError as e:
+            print('Failed to bootstrap environment:', e)
+            sys.exit(1)
+
+        # Re-run using the venv python with an env flag to avoid loops
+        os.environ['NBA_BOOTSTRAPPED'] = '1'
+        # Ensure we execute from the `src/` directory so relative data paths resolve
+        try:
+            os.chdir(os.path.join(repo_root, 'src'))
+        except Exception:
+            pass
+        # Ensure the script path is correct when we changed into `src/`.
+        script_name = os.path.basename(sys.argv[0]) if sys.argv else 'ml_models.py'
+        os.execv(venv_python, [venv_python, script_name] + sys.argv[1:])
+
+
 import pandas as pd
 import numpy as np
 import os
