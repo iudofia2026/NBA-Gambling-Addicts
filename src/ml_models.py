@@ -151,6 +151,22 @@ def evaluate_model(model, X_test, y_test, model_name):
 
     return metrics, y_pred, y_proba
 
+
+class ScaledLogisticRegression:
+    """Module-level wrapper that scales inputs before calling a sklearn LogisticRegression.
+
+    Defining this at module scope makes it picklable by joblib/pickle.
+    """
+    def __init__(self, model, scaler):
+        self.model = model
+        self.scaler = scaler
+
+    def predict(self, X):
+        return self.model.predict(self.scaler.transform(X))
+
+    def predict_proba(self, X):
+        return self.model.predict_proba(self.scaler.transform(X))
+
 class MLModelTrainer:
     """Main class for training and evaluating ML models."""
 
@@ -178,18 +194,7 @@ class MLModelTrainer:
 
         lr.fit(X_train_scaled, y_train)
 
-        # Create scaled model wrapper for consistent interface
-        class ScaledLogisticRegression:
-            def __init__(self, model, scaler):
-                self.model = model
-                self.scaler = scaler
-
-            def predict(self, X):
-                return self.model.predict(self.scaler.transform(X))
-
-            def predict_proba(self, X):
-                return self.model.predict_proba(self.scaler.transform(X))
-
+        # Create scaled model wrapper for consistent interface (module-level class)
         scaled_lr = ScaledLogisticRegression(lr, scaler)
 
         # Evaluate

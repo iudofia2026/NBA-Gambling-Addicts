@@ -1,243 +1,364 @@
 model,feature,importance
-Logistic Regression,playerteamCity,0.11293585891124366
-Logistic Regression,playerteamName,0.26979031551314653
-Logistic Regression,opponentteamCity,0.09111083049333153
-Logistic Regression,opponentteamName,0.08678154063186908
-Logistic Regression,gameType,0.12206862242773885
-Logistic Regression,gameLabel,0.03362502034838272
-Logistic Regression,gameSubLabel,0.062327412149235775
-Logistic Regression,seriesGameNumber,0.01963550578154011
-Logistic Regression,win,0.07087364961665159
-Logistic Regression,home,0.030157655578855767
-Logistic Regression,numMinutes,0.467261635148863
-Logistic Regression,assists,0.12720877940771003
-Logistic Regression,blocks,0.012793771523333324
-Logistic Regression,steals,0.03877689954722797
-Logistic Regression,fieldGoalsAttempted,0.8273296840413562
-Logistic Regression,fieldGoalsMade,4.189439984751336
-Logistic Regression,fieldGoalsPercentage,0.11975342840121342
-Logistic Regression,threePointersAttempted,0.0043134447771587155
-Logistic Regression,threePointersMade,1.3838988298435075
-Logistic Regression,threePointersPercentage,0.04709671347614851
-Logistic Regression,freeThrowsAttempted,0.23923838266094807
-Logistic Regression,freeThrowsMade,2.0799810808465837
-Logistic Regression,freeThrowsPercentage,0.03367986237815235
-Logistic Regression,reboundsDefensive,0.15838084464568988
-Logistic Regression,reboundsOffensive,0.14832823794569083
-Logistic Regression,reboundsTotal,0.07086691181836313
-Logistic Regression,foulsPersonal,0.005705776160465124
-Logistic Regression,turnovers,0.02887462988774826
-Logistic Regression,plusMinusPoints,0.06951418692096603
-Logistic Regression,game_year,0.04252611813730667
-Logistic Regression,birth_year,0.0
-Logistic Regression,age_at_game,0.0
-Logistic Regression,age_expected_points,0.0
-Logistic Regression,age_expected_minutes,0.0
-Logistic Regression,points_vs_age_expected,0.0
-Logistic Regression,minutes_vs_age_expected,0.0
-Logistic Regression,age_category,0.0
-Logistic Regression,years_in_league_approx,0.0
-Logistic Regression,career_stage,0.0
-Logistic Regression,fg_percentage,0.12975096643602582
-Logistic Regression,three_point_percentage,0.05158914456905971
-Logistic Regression,free_throw_percentage,0.03618538588566006
-Logistic Regression,points_per_minute,1.770633112156168
-Logistic Regression,total_shot_attempts,0.7165284710028231
-Logistic Regression,month,0.42026269757261847
-Logistic Regression,day_of_week,0.3290585955284528
-Logistic Regression,is_weekend,0.2503693593418865
-Logistic Regression,rolling_3g_points,1.9082768326452306
-Logistic Regression,rolling_3g_numMinutes,0.014672493482727963
-Logistic Regression,rolling_3g_fieldGoalsMade,2.2632952229846564
-Logistic Regression,rolling_3g_fieldGoalsAttempted,0.3253285610137308
-Logistic Regression,rolling_3g_threePointersMade,0.4299326495681041
-Logistic Regression,rolling_3g_threePointersAttempted,0.20288472007269753
-Logistic Regression,rolling_3g_freeThrowsMade,0.8031245702422802
-Logistic Regression,rolling_3g_freeThrowsAttempted,0.46087718277669554
-Logistic Regression,rolling_3g_assists,0.21504575644164903
-Logistic Regression,rolling_3g_reboundsTotal,0.053074674582989076
-Logistic Regression,rolling_3g_steals,0.06500983121121733
-Logistic Regression,rolling_3g_blocks,0.0123476660953035
-Logistic Regression,rolling_3g_fg_pct,0.056588664853083975
-Logistic Regression,rolling_3g_3pt_pct,0.2004152405322288
-Logistic Regression,rolling_5g_points,2.101703422388591
-Logistic Regression,rolling_5g_numMinutes,0.023731787210559276
-Logistic Regression,rolling_5g_fieldGoalsMade,2.4825595203411583
-Logistic Regression,rolling_5g_fieldGoalsAttempted,0.39283414686112356
-Logistic Regression,rolling_5g_threePointersMade,0.5749644199863715
-Logistic Regression,rolling_5g_threePointersAttempted,0.36824096724149746
-Logistic Regression,rolling_5g_freeThrowsMade,0.9492169049593698
-Logistic Regression,rolling_5g_freeThrowsAttempted,0.38526531069960973
-Logistic Regression,rolling_5g_assists,0.5720541678702671
-Logistic Regression,rolling_5g_reboundsTotal,0.05206671082129529
-Logistic Regression,rolling_5g_steals,0.09536329023632954
-Logistic Regression,rolling_5g_blocks,0.07200502011048382
-Logistic Regression,rolling_5g_fg_pct,0.2709585500825176
-Logistic Regression,rolling_5g_3pt_pct,0.181548741070745
-Logistic Regression,rolling_10g_points,1.051535426497706
-Logistic Regression,rolling_10g_numMinutes,0.15219921432757166
-Logistic Regression,rolling_10g_fieldGoalsMade,1.1583512858922174
-Logistic Regression,rolling_10g_fieldGoalsAttempted,1.944660731263814
-Logistic Regression,rolling_10g_threePointersMade,0.2590257360493643
-Logistic Regression,rolling_10g_threePointersAttempted,0.49767932309649787
-Logistic Regression,rolling_10g_freeThrowsMade,0.6997599549419393
-Logistic Regression,rolling_10g_freeThrowsAttempted,0.48429360607279276
-Logistic Regression,rolling_10g_assists,0.010921299640195961
-Logistic Regression,rolling_10g_reboundsTotal,0.31501500381707154
-Logistic Regression,rolling_10g_steals,0.028985530795257647
-Logistic Regression,rolling_10g_blocks,0.08014282424140544
-Logistic Regression,rolling_10g_fg_pct,0.7706249525259204
-Logistic Regression,rolling_10g_3pt_pct,0.07126366434557344
-Logistic Regression,days_rest,0.1317430685987298
-Logistic Regression,rest_category,0.04965409913775826
-Logistic Regression,games_last_7d,0.3828535016457424
-Logistic Regression,games_last_14d,0.27999976823099415
-Logistic Regression,avg_minutes_last_3g,0.014672493482727963
-Logistic Regression,avg_minutes_last_7g,0.3179461038329042
-Logistic Regression,is_back_to_back,0.13156575814433166
-Logistic Regression,points_vs_threshold,11.968626135692727
-Logistic Regression,over_streak_last_3g,0.0300055595507496
-Logistic Regression,vs_threshold_trend_3g,4.436958706470332
-Logistic Regression,minutes_trend_3g,0.014672493482727963
-Logistic Regression,over_streak_last_5g,0.311323946296143
-Logistic Regression,vs_threshold_trend_5g,4.826904008587268
-Logistic Regression,minutes_trend_5g,0.023731787210559276
-Logistic Regression,hot_streak,0.06820715655680895
-Logistic Regression,cold_streak,0.03917190784022816
-Logistic Regression,points_vs_rolling_avg,6.485613919684287
-Logistic Regression,days_since_season_start,0.2710085491799419
-Logistic Regression,season_progression,0.27100854917993955
-Logistic Regression,season_month,0.29335871101910166
-Logistic Regression,home_game,0.030157655578855767
-Logistic Regression,opponent_def_rating,0.0
-Logistic Regression,opponent_pace,0.0
-Logistic Regression,vs_strong_def_last_5g,0.0
-Logistic Regression,usage_rate_approx,0.8224113103635651
-Logistic Regression,points_per_shot,0.25244997796471624
-Logistic Regression,points_volatility_5g,0.07794142656701655
-Logistic Regression,points_volatility_10g,0.05997585953784135
-Logistic Regression,recent_fg_hot,0.07046823420210444
-Logistic Regression,recent_3pt_hot,0.027710320424378945
-Logistic Regression,good_form,0.04345969469414043
-Logistic Regression,high_usage,0.1289905522227483
-Random Forest,playerteamCity,0.0023606465947414597
-Random Forest,playerteamName,0.005179876722663762
-Random Forest,opponentteamCity,0.0006445304247256116
-Random Forest,opponentteamName,0.0005969800676627312
-Random Forest,gameType,0.00020856625184514547
-Random Forest,gameLabel,0.00020307525657545
-Random Forest,gameSubLabel,8.928892289104547e-06
-Random Forest,seriesGameNumber,0.00011240423446892339
-Random Forest,win,0.00013138063330343704
-Random Forest,home,8.376629258430376e-05
-Random Forest,numMinutes,0.024236381413107445
-Random Forest,assists,0.0006264990975008461
-Random Forest,blocks,0.00038718264072490306
-Random Forest,steals,0.0003091935595841053
-Random Forest,fieldGoalsAttempted,0.0334683980958916
-Random Forest,fieldGoalsMade,0.079859733561062
-Random Forest,fieldGoalsPercentage,0.0127783602608399
-Random Forest,threePointersAttempted,0.0026075926067652563
-Random Forest,threePointersMade,0.012946499527683156
-Random Forest,threePointersPercentage,0.00686855010070931
-Random Forest,freeThrowsAttempted,0.006634469928558227
-Random Forest,freeThrowsMade,0.008169048270040715
-Random Forest,freeThrowsPercentage,0.0024786056527415796
-Random Forest,reboundsDefensive,0.0010361383859031697
-Random Forest,reboundsOffensive,0.0003945679104121107
-Random Forest,reboundsTotal,0.001803923833968191
-Random Forest,foulsPersonal,0.0003776991578865831
-Random Forest,turnovers,0.00047539889571331426
-Random Forest,plusMinusPoints,0.001306488362645434
-Random Forest,game_year,0.0024516103489198838
-Random Forest,birth_year,0.0
-Random Forest,age_at_game,0.0
-Random Forest,age_expected_points,0.0
-Random Forest,age_expected_minutes,0.0
-Random Forest,points_vs_age_expected,0.0
-Random Forest,minutes_vs_age_expected,0.0
-Random Forest,age_category,0.0
-Random Forest,years_in_league_approx,0.0
-Random Forest,career_stage,0.0
-Random Forest,fg_percentage,0.010716546860261363
-Random Forest,three_point_percentage,0.006469131656156127
-Random Forest,free_throw_percentage,0.0029240533938614246
-Random Forest,points_per_minute,0.06933984823624342
-Random Forest,total_shot_attempts,0.03331345995468488
-Random Forest,month,1.9744978116667592e-05
-Random Forest,day_of_week,5.173630070199409e-05
-Random Forest,is_weekend,1.8478239107094185e-06
-Random Forest,rolling_3g_points,0.0016672120593730225
-Random Forest,rolling_3g_numMinutes,0.0012912406295970417
-Random Forest,rolling_3g_fieldGoalsMade,0.0009832184758440863
-Random Forest,rolling_3g_fieldGoalsAttempted,0.002190640990752583
-Random Forest,rolling_3g_threePointersMade,0.0005840383878486778
-Random Forest,rolling_3g_threePointersAttempted,0.0008436245588118032
-Random Forest,rolling_3g_freeThrowsMade,0.0010229896141881229
-Random Forest,rolling_3g_freeThrowsAttempted,0.0011373105821544192
-Random Forest,rolling_3g_assists,0.0012786368469473173
-Random Forest,rolling_3g_reboundsTotal,0.0008641548913755613
-Random Forest,rolling_3g_steals,0.0003826834546577879
-Random Forest,rolling_3g_blocks,0.0005112893214449692
-Random Forest,rolling_3g_fg_pct,0.0008627910095600754
-Random Forest,rolling_3g_3pt_pct,0.0008838676831531537
-Random Forest,rolling_5g_points,0.0030223025760578006
-Random Forest,rolling_5g_numMinutes,0.0011777672734392735
-Random Forest,rolling_5g_fieldGoalsMade,0.002633494294866098
-Random Forest,rolling_5g_fieldGoalsAttempted,0.0021225686673255065
-Random Forest,rolling_5g_threePointersMade,0.0005997437325384481
-Random Forest,rolling_5g_threePointersAttempted,0.0011101325346124901
-Random Forest,rolling_5g_freeThrowsMade,0.0020309148774780832
-Random Forest,rolling_5g_freeThrowsAttempted,0.0017018093741783787
-Random Forest,rolling_5g_assists,0.0016724859165965424
-Random Forest,rolling_5g_reboundsTotal,0.0009221058463578265
-Random Forest,rolling_5g_steals,0.0007388868378592054
-Random Forest,rolling_5g_blocks,0.0007218104445553441
-Random Forest,rolling_5g_fg_pct,0.0012612109996477919
-Random Forest,rolling_5g_3pt_pct,0.001210910983970715
-Random Forest,rolling_10g_points,0.005758093425684459
-Random Forest,rolling_10g_numMinutes,0.0018366457543198484
-Random Forest,rolling_10g_fieldGoalsMade,0.004431128306554387
-Random Forest,rolling_10g_fieldGoalsAttempted,0.002264038095575275
-Random Forest,rolling_10g_threePointersMade,0.0011683469602795696
-Random Forest,rolling_10g_threePointersAttempted,0.001293103183170421
-Random Forest,rolling_10g_freeThrowsMade,0.0027716149980982025
-Random Forest,rolling_10g_freeThrowsAttempted,0.003056751341906433
-Random Forest,rolling_10g_assists,0.002346165486783228
-Random Forest,rolling_10g_reboundsTotal,0.0014075789917669347
-Random Forest,rolling_10g_steals,0.0007928284431819938
-Random Forest,rolling_10g_blocks,0.0013096803466234885
-Random Forest,rolling_10g_fg_pct,0.0013113434114048368
-Random Forest,rolling_10g_3pt_pct,0.0012639725866975535
-Random Forest,days_rest,1.5800113561610556e-05
-Random Forest,rest_category,6.027061284190924e-06
-Random Forest,games_last_7d,1.1887449668700409e-05
-Random Forest,games_last_14d,2.0646538963307766e-05
-Random Forest,avg_minutes_last_3g,0.0013725351881441275
-Random Forest,avg_minutes_last_7g,0.0016640025904626494
-Random Forest,is_back_to_back,2.051407541551695e-05
-Random Forest,points_vs_threshold,0.38093759541637295
-Random Forest,over_streak_last_3g,0.0017448152573390633
-Random Forest,vs_threshold_trend_3g,0.006214251438859686
-Random Forest,minutes_trend_3g,0.0014382470884918097
-Random Forest,over_streak_last_5g,0.004557108857561393
-Random Forest,vs_threshold_trend_5g,0.015793445268551917
-Random Forest,minutes_trend_5g,0.0013967495396413005
-Random Forest,hot_streak,0.0012148189937746573
-Random Forest,cold_streak,0.0018024942878304018
-Random Forest,points_vs_rolling_avg,0.10012374572590542
-Random Forest,days_since_season_start,6.181025952999178e-05
-Random Forest,season_progression,4.457912002268419e-05
-Random Forest,season_month,2.6752370336493596e-05
-Random Forest,home_game,9.417086619070651e-05
-Random Forest,opponent_def_rating,0.0
-Random Forest,opponent_pace,0.0
-Random Forest,vs_strong_def_last_5g,0.0
-Random Forest,usage_rate_approx,0.009744434292364037
-Random Forest,points_per_shot,0.03619516535178116
-Random Forest,points_volatility_5g,0.0011204064424748925
-Random Forest,points_volatility_10g,0.0014470769189533065
-Random Forest,recent_fg_hot,0.00010967758029278946
-Random Forest,recent_3pt_hot,7.681389797153102e-05
-Random Forest,good_form,0.004578892387804115
-Random Forest,high_usage,0.030141535237756506
+logistic_regression,playerteamCity,0.1289407711975274
+logistic_regression,playerteamName,0.13980530243362455
+logistic_regression,opponentteamCity,0.07879057972450007
+logistic_regression,opponentteamName,0.09156418545532091
+logistic_regression,gameType,0.11696314448452297
+logistic_regression,gameLabel,0.03502161842256371
+logistic_regression,gameSubLabel,0.040856450046261754
+logistic_regression,seriesGameNumber,0.027321674059453658
+logistic_regression,win,0.12152228217177646
+logistic_regression,home,0.040788302339727696
+logistic_regression,numMinutes,0.42373379117562554
+logistic_regression,assists,0.0583717402843963
+logistic_regression,blocks,0.05368984373557847
+logistic_regression,steals,0.03434928134810916
+logistic_regression,fieldGoalsAttempted,0.8289126798113102
+logistic_regression,fieldGoalsMade,3.9403789369045676
+logistic_regression,fieldGoalsPercentage,0.13705823449316795
+logistic_regression,threePointersAttempted,0.07389045609640318
+logistic_regression,threePointersMade,1.1016683614448892
+logistic_regression,threePointersPercentage,0.045574917037460666
+logistic_regression,freeThrowsAttempted,0.19614009657052023
+logistic_regression,freeThrowsMade,2.142277082778155
+logistic_regression,freeThrowsPercentage,0.01910503457970316
+logistic_regression,reboundsDefensive,0.15422107996599427
+logistic_regression,reboundsOffensive,0.13554319043461788
+logistic_regression,reboundsTotal,0.07329245796196172
+logistic_regression,foulsPersonal,0.01581674585479987
+logistic_regression,turnovers,0.0161021894639775
+logistic_regression,plusMinusPoints,0.026549113413266445
+logistic_regression,game_year,0.11149923776794109
+logistic_regression,birth_year,0.0
+logistic_regression,age_at_game,0.0
+logistic_regression,age_expected_points,0.0
+logistic_regression,age_expected_minutes,0.0
+logistic_regression,points_vs_age_expected,0.0
+logistic_regression,minutes_vs_age_expected,0.0
+logistic_regression,age_category,0.0
+logistic_regression,years_in_league_approx,0.0
+logistic_regression,career_stage,0.0
+logistic_regression,fg_percentage,0.1450913335289424
+logistic_regression,three_point_percentage,0.05039366462115876
+logistic_regression,free_throw_percentage,0.02163592835109216
+logistic_regression,points_per_minute,1.5599008897120725
+logistic_regression,total_shot_attempts,0.684113715249626
+logistic_regression,month,0.4738463874018866
+logistic_regression,day_of_week,0.14130390385671962
+logistic_regression,is_weekend,0.13179236907675326
+logistic_regression,rolling_3g_points,1.820284746569144
+logistic_regression,rolling_3g_numMinutes,0.01433289359353498
+logistic_regression,rolling_3g_fieldGoalsMade,2.13582715046799
+logistic_regression,rolling_3g_fieldGoalsAttempted,0.38013829458495063
+logistic_regression,rolling_3g_threePointersMade,0.3614738083254051
+logistic_regression,rolling_3g_threePointersAttempted,0.14469598558015048
+logistic_regression,rolling_3g_freeThrowsMade,0.7899987279037244
+logistic_regression,rolling_3g_freeThrowsAttempted,0.5067628432129219
+logistic_regression,rolling_3g_assists,0.19241753122350583
+logistic_regression,rolling_3g_reboundsTotal,0.010751669944380616
+logistic_regression,rolling_3g_steals,0.1089160909754782
+logistic_regression,rolling_3g_blocks,0.009304540211271469
+logistic_regression,rolling_3g_fg_pct,0.09430734860171786
+logistic_regression,rolling_3g_3pt_pct,0.2142412241676705
+logistic_regression,rolling_5g_points,2.0947751772928296
+logistic_regression,rolling_5g_numMinutes,0.05574741679198161
+logistic_regression,rolling_5g_fieldGoalsMade,2.3969406385030005
+logistic_regression,rolling_5g_fieldGoalsAttempted,0.2958961053034405
+logistic_regression,rolling_5g_threePointersMade,0.45987505017566715
+logistic_regression,rolling_5g_threePointersAttempted,0.3040945880782814
+logistic_regression,rolling_5g_freeThrowsMade,1.084183687465803
+logistic_regression,rolling_5g_freeThrowsAttempted,0.4277576073128105
+logistic_regression,rolling_5g_assists,0.540383737232288
+logistic_regression,rolling_5g_reboundsTotal,0.1330148189576032
+logistic_regression,rolling_5g_steals,0.13112292202494064
+logistic_regression,rolling_5g_blocks,0.07804046994677545
+logistic_regression,rolling_5g_fg_pct,0.2259111252267998
+logistic_regression,rolling_5g_3pt_pct,0.0962461834735561
+logistic_regression,rolling_10g_points,1.0143252009911685
+logistic_regression,rolling_10g_numMinutes,0.3189474168535993
+logistic_regression,rolling_10g_fieldGoalsMade,1.0410037513947847
+logistic_regression,rolling_10g_fieldGoalsAttempted,1.918792604720682
+logistic_regression,rolling_10g_threePointersMade,0.41160257935277916
+logistic_regression,rolling_10g_threePointersAttempted,0.2863928690976952
+logistic_regression,rolling_10g_freeThrowsMade,0.7062289671404939
+logistic_regression,rolling_10g_freeThrowsAttempted,0.6115098743287298
+logistic_regression,rolling_10g_assists,0.04976232700684225
+logistic_regression,rolling_10g_reboundsTotal,0.3389032202303032
+logistic_regression,rolling_10g_steals,0.0005907063734957542
+logistic_regression,rolling_10g_blocks,0.17720793002513843
+logistic_regression,rolling_10g_fg_pct,0.8102461857313958
+logistic_regression,rolling_10g_3pt_pct,0.0846672907876241
+logistic_regression,days_rest,0.11098832865503472
+logistic_regression,rest_category,0.07950724383294838
+logistic_regression,games_last_7d,0.2969256400707894
+logistic_regression,games_last_14d,0.127727940495832
+logistic_regression,avg_minutes_last_3g,0.01433289359353498
+logistic_regression,avg_minutes_last_7g,0.1961416947858023
+logistic_regression,is_back_to_back,0.0008700075959340239
+logistic_regression,points_vs_threshold,11.956185547027193
+logistic_regression,over_streak_last_3g,0.1278561508509184
+logistic_regression,vs_threshold_trend_3g,4.424523364076214
+logistic_regression,minutes_trend_3g,0.01433289359353498
+logistic_regression,over_streak_last_5g,0.31972602971170583
+logistic_regression,vs_threshold_trend_5g,4.703356881817699
+logistic_regression,minutes_trend_5g,0.05574741679198161
+logistic_regression,hot_streak,0.022582612277872144
+logistic_regression,cold_streak,0.023182529257017977
+logistic_regression,points_vs_rolling_avg,6.613418349948071
+logistic_regression,days_since_season_start,0.19983026812413263
+logistic_regression,season_progression,0.19983026812413168
+logistic_regression,season_month,0.16552933377202286
+logistic_regression,home_game,0.040788302339727696
+logistic_regression,opponent_def_rating,0.0
+logistic_regression,opponent_pace,0.0
+logistic_regression,vs_strong_def_last_5g,0.0
+logistic_regression,usage_rate_approx,0.6644088920376257
+logistic_regression,points_per_shot,0.3195723874930238
+logistic_regression,points_volatility_5g,0.10001233966523368
+logistic_regression,points_volatility_10g,0.016051246957689
+logistic_regression,recent_fg_hot,0.0714360108934184
+logistic_regression,recent_3pt_hot,0.03846328469062899
+logistic_regression,good_form,0.006124409780369761
+logistic_regression,high_usage,0.1272383765948517
+random_forest,playerteamCity,0.0029127047360826565
+random_forest,playerteamName,0.0033207047949966296
+random_forest,opponentteamCity,0.0006671935359228592
+random_forest,opponentteamName,0.0006690803221264023
+random_forest,gameType,0.0003673324253231596
+random_forest,gameLabel,0.000199887358657349
+random_forest,gameSubLabel,2.878230659072142e-05
+random_forest,seriesGameNumber,0.00012228919071019745
+random_forest,win,8.10618844210726e-05
+random_forest,home,0.00012562158982429587
+random_forest,numMinutes,0.02088688990199015
+random_forest,assists,0.0008473650479917873
+random_forest,blocks,0.00029299045996536975
+random_forest,steals,0.00029168564094872034
+random_forest,fieldGoalsAttempted,0.035054165884778145
+random_forest,fieldGoalsMade,0.06747914635759125
+random_forest,fieldGoalsPercentage,0.012356409111875044
+random_forest,threePointersAttempted,0.003981829583380643
+random_forest,threePointersMade,0.013409841531784438
+random_forest,threePointersPercentage,0.005251787023032798
+random_forest,freeThrowsAttempted,0.006156211618032776
+random_forest,freeThrowsMade,0.007898170425305917
+random_forest,freeThrowsPercentage,0.001985234472788933
+random_forest,reboundsDefensive,0.0010988189485020175
+random_forest,reboundsOffensive,0.0007808022024207499
+random_forest,reboundsTotal,0.0015866259552088124
+random_forest,foulsPersonal,0.00044698094823864004
+random_forest,turnovers,0.0005490764712681494
+random_forest,plusMinusPoints,0.0016788579552379354
+random_forest,game_year,0.0023009439515234756
+random_forest,birth_year,0.0
+random_forest,age_at_game,0.0
+random_forest,age_expected_points,0.0
+random_forest,age_expected_minutes,0.0
+random_forest,points_vs_age_expected,0.0
+random_forest,minutes_vs_age_expected,0.0
+random_forest,age_category,0.0
+random_forest,years_in_league_approx,0.0
+random_forest,career_stage,0.0
+random_forest,fg_percentage,0.01372624677679564
+random_forest,three_point_percentage,0.005495840681866721
+random_forest,free_throw_percentage,0.0017772231472861194
+random_forest,points_per_minute,0.07473343620432207
+random_forest,total_shot_attempts,0.03345909251341553
+random_forest,month,1.08652714224852e-05
+random_forest,day_of_week,5.8367339100666775e-06
+random_forest,is_weekend,6.737064940673422e-06
+random_forest,rolling_3g_points,0.002018918197059643
+random_forest,rolling_3g_numMinutes,0.0009941969233344952
+random_forest,rolling_3g_fieldGoalsMade,0.0013639344111366712
+random_forest,rolling_3g_fieldGoalsAttempted,0.0020752176673058172
+random_forest,rolling_3g_threePointersMade,0.0007565381561487408
+random_forest,rolling_3g_threePointersAttempted,0.0010568232420880498
+random_forest,rolling_3g_freeThrowsMade,0.0020770902159622344
+random_forest,rolling_3g_freeThrowsAttempted,0.001740554317598217
+random_forest,rolling_3g_assists,0.0010452907936973864
+random_forest,rolling_3g_reboundsTotal,0.0010027079673935917
+random_forest,rolling_3g_steals,0.00045084884227058754
+random_forest,rolling_3g_blocks,0.0004039140491341879
+random_forest,rolling_3g_fg_pct,0.0010417634009097956
+random_forest,rolling_3g_3pt_pct,0.0009101504434016546
+random_forest,rolling_5g_points,0.0026281185657722954
+random_forest,rolling_5g_numMinutes,0.0010365308467654298
+random_forest,rolling_5g_fieldGoalsMade,0.0030376980549570937
+random_forest,rolling_5g_fieldGoalsAttempted,0.0025937021890974775
+random_forest,rolling_5g_threePointersMade,0.0007640233479977377
+random_forest,rolling_5g_threePointersAttempted,0.0014668131071211576
+random_forest,rolling_5g_freeThrowsMade,0.002218676005898306
+random_forest,rolling_5g_freeThrowsAttempted,0.0022496025099916724
+random_forest,rolling_5g_assists,0.0014493175226442103
+random_forest,rolling_5g_reboundsTotal,0.0011557089822652202
+random_forest,rolling_5g_steals,0.00040662616349409076
+random_forest,rolling_5g_blocks,0.0007907486582291512
+random_forest,rolling_5g_fg_pct,0.0010635892069997645
+random_forest,rolling_5g_3pt_pct,0.000790851659246266
+random_forest,rolling_10g_points,0.005508295578216762
+random_forest,rolling_10g_numMinutes,0.002244140625924611
+random_forest,rolling_10g_fieldGoalsMade,0.0035382157519473346
+random_forest,rolling_10g_fieldGoalsAttempted,0.0021189023312521782
+random_forest,rolling_10g_threePointersMade,0.00111606918669521
+random_forest,rolling_10g_threePointersAttempted,0.0019480128747077295
+random_forest,rolling_10g_freeThrowsMade,0.004217541635933201
+random_forest,rolling_10g_freeThrowsAttempted,0.003182565047754606
+random_forest,rolling_10g_assists,0.002019846107982252
+random_forest,rolling_10g_reboundsTotal,0.001790160955553465
+random_forest,rolling_10g_steals,0.0005835516375760608
+random_forest,rolling_10g_blocks,0.0012972510905998466
+random_forest,rolling_10g_fg_pct,0.0017435041813407349
+random_forest,rolling_10g_3pt_pct,0.0009798288491179247
+random_forest,days_rest,5.044459682205252e-06
+random_forest,rest_category,1.735580640788672e-05
+random_forest,games_last_7d,3.5391071015285345e-06
+random_forest,games_last_14d,2.6565020932772928e-05
+random_forest,avg_minutes_last_3g,0.0014960029582127294
+random_forest,avg_minutes_last_7g,0.0016162015752447909
+random_forest,is_back_to_back,1.0705191959786431e-15
+random_forest,points_vs_threshold,0.3771773192809477
+random_forest,over_streak_last_3g,0.002329666722084956
+random_forest,vs_threshold_trend_3g,0.007250043870100687
+random_forest,minutes_trend_3g,0.0008211154710999043
+random_forest,over_streak_last_5g,0.00293223580352765
+random_forest,vs_threshold_trend_5g,0.015230062789588059
+random_forest,minutes_trend_5g,0.0012169538272616763
+random_forest,hot_streak,0.0015878969340672915
+random_forest,cold_streak,0.0016345619870618
+random_forest,points_vs_rolling_avg,0.09982485762092777
+random_forest,days_since_season_start,6.1433881313175736e-06
+random_forest,season_progression,1.9506947998950586e-05
+random_forest,season_month,4.312201480052578e-18
+random_forest,home_game,7.999253693619554e-05
+random_forest,opponent_def_rating,0.0
+random_forest,opponent_pace,0.0
+random_forest,vs_strong_def_last_5g,0.0
+random_forest,usage_rate_approx,0.014078326431853812
+random_forest,points_per_shot,0.03366650640950488
+random_forest,points_volatility_5g,0.0009164315154554515
+random_forest,points_volatility_10g,0.0009672750341411866
+random_forest,recent_fg_hot,7.2792896906814e-05
+random_forest,recent_3pt_hot,8.870999529156295e-05
+random_forest,good_form,0.0047104212981296
+random_forest,high_usage,0.039302858978396554
+xgboost,playerteamCity,0.028932029381394386
+xgboost,playerteamName,0.00011633026588242501
+xgboost,opponentteamCity,0.0
+xgboost,opponentteamName,0.0
+xgboost,gameType,0.0
+xgboost,gameLabel,0.0007211756310425699
+xgboost,gameSubLabel,0.0
+xgboost,seriesGameNumber,0.0
+xgboost,win,0.0
+xgboost,home,0.0
+xgboost,numMinutes,0.010466370731592178
+xgboost,assists,0.0
+xgboost,blocks,0.0
+xgboost,steals,0.0
+xgboost,fieldGoalsAttempted,0.0
+xgboost,fieldGoalsMade,0.15245012938976288
+xgboost,fieldGoalsPercentage,0.0007048071129247546
+xgboost,threePointersAttempted,0.0010833803098648787
+xgboost,threePointersMade,0.007872751913964748
+xgboost,threePointersPercentage,0.001429088180884719
+xgboost,freeThrowsAttempted,0.012212461791932583
+xgboost,freeThrowsMade,0.015757810324430466
+xgboost,freeThrowsPercentage,0.005483649205416441
+xgboost,reboundsDefensive,0.0
+xgboost,reboundsOffensive,0.0024725014809519053
+xgboost,reboundsTotal,0.0028809956274926662
+xgboost,foulsPersonal,0.0
+xgboost,turnovers,0.0
+xgboost,plusMinusPoints,0.00330144539475441
+xgboost,game_year,0.009120305068790913
+xgboost,birth_year,0.0
+xgboost,age_at_game,0.0
+xgboost,age_expected_points,0.0
+xgboost,age_expected_minutes,0.0
+xgboost,points_vs_age_expected,0.0
+xgboost,minutes_vs_age_expected,0.0
+xgboost,age_category,0.0
+xgboost,years_in_league_approx,0.0
+xgboost,career_stage,0.0
+xgboost,fg_percentage,0.0
+xgboost,three_point_percentage,0.0
+xgboost,free_throw_percentage,8.623580652056262e-05
+xgboost,points_per_minute,0.0049555376172065735
+xgboost,total_shot_attempts,0.008071648888289928
+xgboost,month,0.0
+xgboost,day_of_week,0.0
+xgboost,is_weekend,0.0
+xgboost,rolling_3g_points,0.0010486418614163995
+xgboost,rolling_3g_numMinutes,0.0
+xgboost,rolling_3g_fieldGoalsMade,0.0
+xgboost,rolling_3g_fieldGoalsAttempted,0.0013210771139711142
+xgboost,rolling_3g_threePointersMade,0.0
+xgboost,rolling_3g_threePointersAttempted,0.0031765915919095278
+xgboost,rolling_3g_freeThrowsMade,0.0
+xgboost,rolling_3g_freeThrowsAttempted,0.0037198071368038654
+xgboost,rolling_3g_assists,0.0023739805910736322
+xgboost,rolling_3g_reboundsTotal,0.0
+xgboost,rolling_3g_steals,0.0
+xgboost,rolling_3g_blocks,0.0024530799128115177
+xgboost,rolling_3g_fg_pct,0.0
+xgboost,rolling_3g_3pt_pct,0.0
+xgboost,rolling_5g_points,0.0020986730232834816
+xgboost,rolling_5g_numMinutes,0.0
+xgboost,rolling_5g_fieldGoalsMade,0.001249471097253263
+xgboost,rolling_5g_fieldGoalsAttempted,0.0
+xgboost,rolling_5g_threePointersMade,0.0
+xgboost,rolling_5g_threePointersAttempted,0.0040370323695242405
+xgboost,rolling_5g_freeThrowsMade,0.01705656386911869
+xgboost,rolling_5g_freeThrowsAttempted,0.0
+xgboost,rolling_5g_assists,0.0002348175476072356
+xgboost,rolling_5g_reboundsTotal,0.0021754109766334295
+xgboost,rolling_5g_steals,0.0
+xgboost,rolling_5g_blocks,0.0
+xgboost,rolling_5g_fg_pct,0.0
+xgboost,rolling_5g_3pt_pct,0.00038625666638836265
+xgboost,rolling_10g_points,0.000724582641851157
+xgboost,rolling_10g_numMinutes,0.0010968873975798488
+xgboost,rolling_10g_fieldGoalsMade,0.0027459952980279922
+xgboost,rolling_10g_fieldGoalsAttempted,0.0007165402639657259
+xgboost,rolling_10g_threePointersMade,0.0055186995305120945
+xgboost,rolling_10g_threePointersAttempted,0.007979730144143105
+xgboost,rolling_10g_freeThrowsMade,0.019582150503993034
+xgboost,rolling_10g_freeThrowsAttempted,0.00435621477663517
+xgboost,rolling_10g_assists,0.013772915117442608
+xgboost,rolling_10g_reboundsTotal,0.01043014321476221
+xgboost,rolling_10g_steals,0.000721029588021338
+xgboost,rolling_10g_blocks,0.0008065425790846348
+xgboost,rolling_10g_fg_pct,0.0043228669092059135
+xgboost,rolling_10g_3pt_pct,0.007522284053266048
+xgboost,days_rest,0.0
+xgboost,rest_category,0.0
+xgboost,games_last_7d,0.0
+xgboost,games_last_14d,0.0
+xgboost,avg_minutes_last_3g,0.0
+xgboost,avg_minutes_last_7g,0.0006959136808291078
+xgboost,is_back_to_back,0.0
+xgboost,points_vs_threshold,0.4694381356239319
+xgboost,over_streak_last_3g,0.0
+xgboost,vs_threshold_trend_3g,0.002467227168381214
+xgboost,minutes_trend_3g,0.0
+xgboost,over_streak_last_5g,0.0035068087745457888
+xgboost,vs_threshold_trend_5g,0.004928609821945429
+xgboost,minutes_trend_5g,0.0
+xgboost,hot_streak,0.0
+xgboost,cold_streak,0.0
+xgboost,points_vs_rolling_avg,0.015124033205211163
+xgboost,days_since_season_start,0.0
+xgboost,season_progression,0.0
+xgboost,season_month,0.0
+xgboost,home_game,0.0
+xgboost,opponent_def_rating,0.0
+xgboost,opponent_pace,0.0
+xgboost,vs_strong_def_last_5g,0.0
+xgboost,usage_rate_approx,0.014555639587342739
+xgboost,points_per_shot,0.01973925717175007
+xgboost,points_volatility_5g,0.00032035791082307696
+xgboost,points_volatility_10g,4.0534123399993405e-05
+xgboost,recent_fg_hot,0.0011512296041473746
+xgboost,recent_3pt_hot,0.0
+xgboost,good_form,0.008263197727501392
+xgboost,high_usage,0.07002242654561996
