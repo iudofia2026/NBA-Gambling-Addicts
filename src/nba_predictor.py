@@ -202,28 +202,42 @@ class FixedNBAPredictionsSystem:
                 return None
 
             baseline_points = player_data['points'].tail(10).mean()
+            print(f"   📊 Baseline points: {baseline_points:.1f}")
 
             # Analyze all three iterations
             form = self.analyze_player_form(player_name)
             chemistry = self.analyze_team_chemistry(player_name, game_context.get('player_team', ''))
             matchup = self.analyze_individual_matchup(player_name, game_context['opponent_team'])
 
+            print(f"   📈 Form confidence: {form['form_confidence']:.2f}")
+            print(f"   🤝 Chemistry impact: {chemistry['chemistry_impact']:.2f}")
+            print(f"   ⚔️ Matchup confidence: {matchup['sample_confidence']:.2f}")
+
             # Calculate final prediction
             result = self.calculate_final_prediction(
                 player_name, game_context, form, chemistry, matchup, baseline_points
             )
 
+            print(f"   🎯 Final predicted points: {result['predicted_points']:.1f}")
+            print(f"   🔢 Overall confidence: {result['confidence_score']:.2f}")
+
             predictions = {}
+
+            print(f"   🏷️ Available market types: {list(prop_lines_by_market.keys())}")
+            print(f"   🏷️ Market type details:")
+            for mt, pd in prop_lines_by_market.items():
+                print(f"      {mt}: {len(pd)} entries")
 
             # Make prediction for each market type
             for market_type, prop_data in prop_lines_by_market.items():
-                if market_type.lower() == 'points':
+                if market_type.lower() == 'player_points':  # API returns 'player_points'
                     predicted_value = result['predicted_points']
-                elif market_type.lower() == 'rebounds':
+                elif market_type.lower() == 'player_rebounds':  # API returns 'player_rebounds'
                     predicted_value = baseline_points * 0.4
-                elif market_type.lower() == 'assists':
+                elif market_type.lower() == 'player_assists':  # API returns 'player_assists'
                     predicted_value = baseline_points * 0.25
                 else:
+                    print(f"      ⚠️ Skipping unknown market type: '{market_type}' (need to add to logic)")
                     continue  # Skip unknown market types
 
                 # Find best odds for this market (convert list to DataFrame first)
@@ -245,6 +259,7 @@ class FixedNBAPredictionsSystem:
                     'bookmaker': best_prop['bookmaker'],
                     'game_time': best_prop['game_time']
                 }
+                print(f"      ✅ Added {market_type} prediction: {recommendation} {best_prop['prop_line']} ({predicted_value:.1f})")
 
             if not predictions:
                 print(f"   ❌ No valid predictions generated for {player_name}")
