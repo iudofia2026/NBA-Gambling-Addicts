@@ -937,7 +937,6 @@ class AdvancedNBAPredictor:
             line_adjustment = 0
 
         # 3. Small random variance for realism
-        import numpy as np
         variance = np.random.normal(0, baseline * 0.05)  # 5% variance
 
         # Final prediction
