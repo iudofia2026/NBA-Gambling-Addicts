@@ -902,25 +902,32 @@ class AdvancedNBAPredictor:
         if not stat_column or stat_column not in player_data.columns:
             return None
 
-        # Calculate REALISTIC baselines using our proven method
-        recent_data = player_data.tail(10)  # Last 10 games
-        season_data = player_data.tail(30)  # Last 30 games
+        # AGGRESSIVE FILTERING: Only use STARTER-LEVEL games (28+ minutes)
+        starter_games = player_data[player_data['numMinutes'] >= 28.0]
 
-        if len(recent_data) < 3:
+        if len(starter_games) < 5:
+            print(f"      ⚠️ Insufficient starter data for {player_name} ({len(starter_games)} games)")
             return None
 
-        # Simple weighted average (recent games matter more)
-        recent_avg = recent_data[stat_column].mean()
-        season_avg = season_data[stat_column].mean()
+        # Use only recent starter-level performances
+        recent_starters = starter_games.tail(10)  # Last 10 starter games
+        season_starters = starter_games.tail(20)  # Last 20 starter games
+
+        if len(recent_starters) < 3:
+            return None
+
+        # Calculate averages from STARTER games only
+        recent_avg = recent_starters[stat_column].mean()
+        season_avg = season_starters[stat_column].mean()
 
         # Baseline prediction: 70% recent, 30% season
         baseline = (recent_avg * 0.7) + (season_avg * 0.3)
 
         # REALISTIC ADJUSTMENTS (small, sensible)
 
-        # 1. Form adjustment (hot/cold)
-        last_3_games = recent_data[stat_column].tail(3).mean()
-        form_factor = (last_3_games - recent_avg) / recent_avg if recent_avg > 0 else 0
+        # 1. Form adjustment (hot/cold) - using starter games only
+        last_3_starters = recent_starters[stat_column].tail(3).mean()
+        form_factor = (last_3_starters - recent_avg) / recent_avg if recent_avg > 0 else 0
         form_adjustment = baseline * form_factor * 0.1  # Max 10% adjustment
 
         # 2. Line-aware calibration (key insight!)
@@ -937,7 +944,6 @@ class AdvancedNBAPredictor:
             line_adjustment = 0
 
         # 3. Small random variance for realism
-        import numpy as np
         variance = np.random.normal(0, baseline * 0.05)  # 5% variance
 
         # Final prediction
@@ -950,6 +956,17 @@ class AdvancedNBAPredictor:
         adjustment_magnitude = abs(form_adjustment + line_adjustment) / baseline if baseline > 0 else 0
         confidence = max(0.3, 0.8 - adjustment_magnitude)
 
+        # Calculate advanced insights
+        usage_trend = f"{'↑' if form_factor > 0.1 else '↓' if form_factor < -0.1 else '→'}"
+
+        matchup_rating = "Favorable" if line_adjustment > 0 else "Tough" if line_adjustment < -1 else "Neutral"
+
+        fatigue_level = "Low" if len(recent_starters) >= 8 else "Medium" if len(recent_starters) >= 5 else "High"
+
+        hot_cold = "Hot" if form_factor > 0.1 else "Cold" if form_factor < -0.1 else "Neutral"
+
+        pace_impact = "Normal"  # Simplified for now
+
         return {
             'predicted_value': round(prediction, 1),
             'baseline': round(baseline, 1),
@@ -959,7 +976,14 @@ class AdvancedNBAPredictor:
             'line_adjustment': round(line_adjustment, 2),
             'confidence': round(confidence, 3),
             'line_diff': round(prediction - prop_line, 1),
-            'recommendation': 'OVER' if prediction > prop_line else 'UNDER'
+            'recommendation': 'OVER' if prediction > prop_line else 'UNDER',
+            # Advanced insights for CSV export
+            'usage_trend': usage_trend,
+            'matchup_rating': matchup_rating,
+            'fatigue_level': fatigue_level,
+            'hot_cold': hot_cold,
+            'pace_impact': pace_impact,
+            'starter_games_used': len(starter_games)
         }
 
     def make_prediction(self, player_name, prop_data, game_context):
@@ -1007,7 +1031,12 @@ class AdvancedNBAPredictor:
                         'season_avg': robust_result['season_avg'],
                         'baseline': robust_result['baseline'],
                         'form_adjustment': robust_result['form_adjustment'],
-                        'line_adjustment': robust_result['line_adjustment']
+                        'line_adjustment': robust_result['line_adjustment'],
+                        'usage_trend': robust_result['usage_trend'],
+                        'matchup_rating': robust_result['matchup_rating'],
+                        'fatigue_level': robust_result['fatigue_level'],
+                        'hot_cold': robust_result['hot_cold'],
+                        'pace_impact': robust_result['pace_impact']
                     }
 
                     print(f"      ✅ {stat_type}: {robust_result['recommendation']} {best_prop['prop_line']} (pred: {robust_result['predicted_value']:.1f}, conf: {robust_result['confidence']:.3f})")
