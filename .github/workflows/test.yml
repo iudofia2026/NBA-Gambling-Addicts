@@ -1,0 +1,97 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, prod, dev ]
+  pull_request:
+    branches: [ main, prod ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r tests/requirements-test.txt
+
+    - name: Lint with flake8
+      run: |
+        # Stop build if there are Python syntax errors or undefined names
+        flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 src --count --exit-zero --max-complexity=10 --max-line-length=100 --statistics
+
+    - name: Check code formatting with black
+      run: |
+        black --check src tests
+
+    - name: Type check with mypy
+      continue-on-error: true
+      run: |
+        mypy src --ignore-missing-imports
+
+    - name: Run unit tests
+      run: |
+        pytest tests/unit -v --cov=src --cov-report=xml --cov-report=term-missing -m "not slow"
+
+    - name: Run integration tests
+      run: |
+        pytest tests/integration -v -m "not slow"
+
+    - name: Run validation tests
+      run: |
+        pytest tests/validation -v
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+  test-full:
+    # Full test suite including slow tests (run on main/prod only)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/prod'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r tests/requirements-test.txt
+
+    - name: Run all tests (including slow)
+      run: |
+        pytest tests -v --cov=src --cov-report=html --durations=20
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: htmlcov/

@@ -1,304 +1,143 @@
-# NBA Player Over/Under Predictor
+## NBA Player Prop Prediction System
 
-**CPSC 1710 Final Project**
-*Team: Marcelo, Isiah, Gustavo*
+A production-ready machine learning pipeline that predicts NBA player prop outcomes (over/under on points, rebounds, assists) using engineered features, ensemble models, and live betting odds from The Odds API.
 
-A machine learning system that predicts whether NBA players will score "over" or "under" specific point thresholds in their next game. This project addresses a classic problem in fantasy sports and betting by creating a binary classifier trained on historical NBA data.
+The repository contains everything from raw data processing and feature engineering to model training, evaluation, and multiple live prediction engines, backed by an automated test suite.
 
-## Project Overview
+### Core Capabilities
 
-### What We're Building
-- **Goal**: Binary classifier to predict if NBA players will score above or below betting line thresholds (e.g., 25.5 points)
-- **Purpose**: Test against real-world betting lines during the NBA season for immediate feedback validation
-- **Scope**: Focus on ~20-50 key NBA players for manageable but meaningful predictions
+- **End-to-end ML pipeline**: Data cleaning, feature engineering, model training, evaluation, and prediction.
+- **Ensemble models**: Logistic Regression (with scaling), Random Forest, and optional XGBoost, combined into an ensemble for robust predictions.
+- **Live odds integration**: Fetches current NBA player props and odds from The Odds API and formats them for the ML pipeline.
+- **Daily prediction scripts**: Multiple entry points to generate daily recommendations with confidence scores and CSV exports.
+- **Advanced analytics**: Iterative feature sets (evidence-based features, matchup analytics, advanced momentum and chemistry features) for richer predictions.
+- **Comprehensive testing**: Unit, integration, and validation tests for data, models, and API integration.
 
-### Why This Matters
-- **Fast Feedback Loop**: Daily NBA games provide constant validation opportunities
-- **Real-World Relevance**: Directly comparable to actual sports betting and fantasy performance
-- **ML Application**: Perfect use case for classification with complex, hidden variables (fatigue, matchups, hot streaks)
-- **Academic Value**: Demonstrates feature engineering, model selection, and evaluation under distribution shift
+### High-Level Architecture
 
-### How We're Approaching It
-- **Problem Type**: Binary classification ("over" = 1, "under" = 0)
-- **Models**: Start with Logistic Regression → Random Forest/XGBoost
-- **Evaluation**: Nightly backtesting with accuracy, Brier score, and calibration metrics
-- **Baseline Comparisons**: Season averages vs. thresholds, rolling N-game averages
+- **Data layer**
+  - `data/processed/engineered_features.csv`: Main feature dataset used for training and predictions.
+  - Additional processed artifacts (cleaning summaries, feature importance, age analysis, etc.).
+- **Model artifacts** (`models/`)
+  - `logistic_regression_model.pkl`, `random_forest_model.pkl`, `xgboost_model.pkl` (optional).
+  - `feature_columns.pkl` (feature schema) and `label_encoders.pkl` (categorical encoders) shared between training and inference.
+- **Core ML & pipeline code** (`src/`)
+  - `ml_models.py`: General model training pipeline (train/validation split, feature prep, trainer classes, evaluation helpers).
+  - `final_ml_models.py`: Leakage-safe training script that constrains features to pre-game signals only.
+  - `data_cleaning.py`, `feature_engineering.py`: Data preparation and feature creation for `engineered_features.csv`.
+- **Prediction systems** (`src/`)
+  - `daily_predictions.py`: Primary, model-based daily prediction script using the persisted ensemble and live odds.
+  - `final_predictions_system.py`: "Final" prediction engine that layers momentum, team chemistry, and matchup history on top of baselines.
+  - `advanced_analytics_v6.py`: Advanced feature generators and `CompleteNBAPredictor` that combines evidence-based, matchup, and advanced analytics iterations.
+  - Additional experimental/iterative scripts (`enhanced_predictions_*`, `matchup_analytics_v5.py`, `evidence_features_v4.py`, etc.).
+- **Odds API integration**
+  - `odds_api_client.py`: Handles HTTP calls to The Odds API, request throttling, and transformation into ML-ready DataFrames.
 
-## Technical Architecture
+### Getting Started
 
-### Data Sources
-1. **Historical NBA Data & Player Box Scores** (Kaggle)
-   - `PlayerStatistics.csv` - Individual player game logs with points, minutes, usage
-   - `Games.csv` - Game-level information (home/away, dates)
-   - `TeamStatistics.csv` - Team offensive/defensive metrics
+#### 1. Install dependencies
 
-2. **Basketball Reference Dataset** (Kaggle)
-   - `game.csv` - Detailed game information
-   - `play_by_play.csv` - Granular game events
-   - Additional team and player metrics
-
-### Feature Engineering Pipeline
-
-#### Player-Level Features
-- **Rolling Averages**: 3-game and 10-game moving averages for:
-  - Points per game
-  - Minutes played
-  - Usage rate
-  - Field goal percentage
-- **Rest & Schedule**:
-  - Days of rest since last game
-  - Back-to-back game indicators
-  - Games in last N days (fatigue proxy)
-
-#### Opponent Features
-- **Defensive Strength**:
-  - Opponent points allowed per game
-  - Opponent defensive rating
-  - Historical performance vs. similar players
-- **Pace Factors**:
-  - Team pace (possessions per game)
-  - Recent pace trends
-
-#### Contextual Features
-- **Game Context**:
-  - Home vs. Away
-  - Day of week
-  - Month/season progression
-- **Player Context**:
-  - Season averages relative to career norms
-  - Recent hot/cold streak indicators
-
-### Model Development Strategy
-
-#### Phase 1: Baseline Models
-```python
-# Simple baselines for comparison
-1. Season average vs. threshold
-2. Last 5 games average vs. threshold
-3. Last 10 games average vs. threshold
-```
-
-#### Phase 2: ML Models
-```python
-# Progressive model complexity
-1. Logistic Regression (interpretable, fast)
-2. Random Forest (handles interactions, robust)
-3. XGBoost (gradient boosting, high performance)
-```
-
-#### Phase 3: Model Optimization
-- **Cross-Validation**: Player-aware splits to prevent data leakage
-- **Hyperparameter Tuning**: Grid/random search with validation
-- **Calibration**: Isotonic regression for probability calibration
-- **Feature Selection**: Recursive feature elimination, importance analysis
-
-### Evaluation Framework
-
-#### Metrics
-- **Classification**: Accuracy, Precision, Recall, F1-Score
-- **Probability**: Brier Score (primary), Log-Loss
-- **Calibration**: Reliability plots, calibration error
-- **Practical**: ROI simulation against betting lines
-
-#### Validation Strategy
-```python
-# Time-aware validation to prevent look-ahead bias
-1. Walk-forward validation (temporal splits)
-2. Player-stratified CV (prevent player leakage)
-3. Hold-out test set (final evaluation)
-4. Live forward testing (during season)
-```
-
-#### Error Analysis
-- **Performance by Player**: Identify which players are most/least predictable
-- **Performance by Context**: Home vs away, rest days, opponent strength
-- **Feature Importance**: SHAP values for model interpretability
-- **Failure Case Analysis**: When and why predictions fail
-
-## Project Timeline
-
-### Phase 1: Foundation (Nov 10-14) - 6-8 hours
-- [x] **Data Acquisition**: Download and extract NBA datasets
-- [x] **Project Setup**: Repository structure, README, initial documentation
-- [x] **Player Selection**: Target players selected (13 players)
-  - **Selected Players**: Mikal Bridges, Buddy Hield, Harrison Barnes, Nikola Jokić, James Harden, Rudy Gobert, Nikola Vučević, Tobias Harris, Devin Booker, Karl-Anthony Towns, Jrue Holiday, Stephen Curry, Kevin Durant
-  - **Environment**: Working in prod-2 branch
-- [ ] **Data Exploration**: Initial EDA on key files (PlayerStatistics.csv, Games.csv)
-- [ ] **Threshold Definition**: Define point thresholds for each selected player
-
-### Phase 2: Data Pipeline (Nov 15-21) - 10-12 hours
-- [ ] **Data Cleaning**: Handle missing values, data quality issues
-- [ ] **Feature Engineering**: Implement rolling averages, rest days, opponent metrics
-- [ ] **Data Integration**: Merge player stats with game context and opponent data
-- [ ] **Baseline Implementation**: Season averages and rolling window baselines
-- [ ] **Train/Test Split**: Implement temporal splits for valid evaluation
-
-### Phase 3: Model Development (Nov 22-28) - 8-10 hours
-- [ ] **Initial Models**: Logistic regression with basic features
-- [ ] **Model Pipeline**: Cross-validation framework with player-aware splits
-- [ ] **Advanced Models**: Random Forest and XGBoost implementation
-- [ ] **Evaluation Framework**: Metrics calculation and comparison system
-- [ ] **Initial Dashboard**: Simple visualization of predictions vs actuals
-
-### Phase 4: Optimization & Analysis (Nov 29-Dec 5) - 12-14 hours
-- [ ] **Hyperparameter Tuning**: Grid search for optimal model parameters
-- [ ] **Feature Selection**: Identify most predictive features
-- [ ] **Probability Calibration**: Improve prediction confidence reliability
-- [ ] **Error Analysis**: Deep dive into model failures and edge cases
-- [ ] **Performance Analysis**: Player-specific and context-specific performance
-
-### Phase 5: Documentation & Presentation (Dec 6-12) - 10-12 hours
-- [ ] **Dashboard Polish**: Clean, interpretable visualization of results
-- [ ] **Documentation**: Comprehensive technical documentation
-- [ ] **Report Writing**: Academic report with methodology and findings
-- [ ] **Presentation Prep**: Slides and live demo preparation
-- [ ] **Code Organization**: Clean, documented, reproducible code
-
-### Phase 6: Final Delivery (Finals Week) - 8-10 hours
-- [ ] **Presentation Rehearsal**: Practice and refine presentation
-- [ ] **Final Report**: Complete academic report submission
-- [ ] **Code Submission**: Final code package with documentation
-
-## Team Responsibilities
-
-### Marcelo
-- **Primary**: Data wrangling, exploration, and evaluation framework
-- **Specific Tasks**:
-  - Raw data processing and cleaning
-  - Exploratory data analysis and insights
-  - Baseline model implementation
-  - Nightly evaluation logging system
-  - Initial model training and validation
-
-### Isiah
-- **Primary**: Feature engineering, model tuning, and visualization
-- **Specific Tasks**:
-  - Rolling average and contextual feature creation
-  - Model hyperparameter optimization
-  - Probability calibration implementation
-  - Dashboard and visualization development
-  - Presentation assets and slides
-
-### Gustavo
-- **Primary**: Model evaluation, debugging, and error analysis
-- **Specific Tasks**:
-  - Cross-validation framework implementation
-  - Model performance debugging
-  - Error analysis and failure case identification
-  - Feature importance and model interpretability
-  - Documentation and code organization
-
-### Shared Responsibilities
-- **All Team Members**:
-  - Weekly progress meetings and coordination
-  - Risk mitigation and problem-solving
-  - Final report writing and editing
-  - Presentation delivery and Q&A
-
-## Risk Management
-
-### Technical Risks
-1. **Data Quality Issues**
-   - *Risk*: Missing games, inconsistent player IDs, data gaps
-   - *Mitigation*: Robust data validation, multiple data sources, graceful handling of missing data
-
-2. **Class Imbalance**
-   - *Risk*: Skewed over/under distributions for certain thresholds
-   - *Mitigation*: Class weighting, threshold adjustment, stratified sampling
-
-3. **Overfitting to Star Players**
-   - *Risk*: Model performs well on a few players but poorly on others
-   - *Mitigation*: Player-stratified validation, diverse player selection, regularization
-
-4. **Distribution Shift**
-   - *Risk*: Player roles, team strategies change during season
-   - *Mitigation*: Recency weighting, adaptive thresholds, continuous monitoring
-
-### Project Risks
-1. **Timeline Delays**
-   - *Risk*: Data processing takes longer than expected
-   - *Mitigation*: Front-load data work, have backup simplified approaches
-
-2. **Threshold Availability**
-   - *Risk*: Difficulty obtaining real betting lines
-   - *Mitigation*: Use player-specific season averages as proxy thresholds
-
-3. **Model Complexity**
-   - *Risk*: Over-engineering leads to poor performance or interpretability
-   - *Mitigation*: Start simple (logistic regression), add complexity incrementally
-
-## Success Metrics
-
-### MVP Success Criteria
-- [ ] **Functional Classifier**: Working binary classifier for 20+ players
-- [ ] **Baseline Comparison**: Outperform simple averaging baselines
-- [ ] **Evaluation Framework**: Daily prediction and evaluation for 1+ weeks
-- [ ] **Reproducible Results**: Clear documentation and runnable code
-- [ ] **Academic Deliverables**: Complete report and presentation ready
-
-### Stretch Goals
-- [ ] **Strong Performance**: >55% accuracy with good calibration
-- [ ] **Real-time Predictions**: System for generating daily predictions
-- [ ] **Comprehensive Analysis**: Deep insights into predictability patterns
-- [ ] **Feature Insights**: Clear understanding of what drives performance
-- [ ] **Practical Application**: Demonstrate potential for real-world use
-
-## Getting Started
-
-### Prerequisites
 ```bash
-# Required packages
-pip install pandas numpy scikit-learn xgboost matplotlib seaborn jupyter
+./setup.sh
 ```
 
-### Quick Start
+This script creates a virtual environment and installs packages from `requirements.txt`.
+
+#### 2. Configure API access
+
 ```bash
-# 1. Clone repository
-git clone <repo-url>
-cd NBA-Gambling-Addicts
-
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Download the raw datasets from Kaggle (see data/raw/README.md for details)
-#    Example:
-#    kaggle datasets download -d eoinamoore/historical-nba-data-and-player-box-scores -p data/raw
-#    kaggle datasets download -d wyattowalsh/basketball -p data/raw
-#    unzip *.zip
-
-# 4. Start with exploratory notebook
-jupyter notebook notebooks/01_data_exploration.ipynb
-
-# 5. Follow the phase-by-phase development plan
+echo "ODDS_API_KEY=your_api_key_here" > .env
 ```
 
-### Repository Structure
-```
-NBA-Gambling-Addicts/
-├── data/
-│   ├── raw/                    # Original datasets from Kaggle
-│   └── processed/              # Cleaned, feature-engineered data
-├── notebooks/                  # Jupyter notebooks for analysis
-├── src/                       # Python modules and scripts
-├── models/                    # Trained model artifacts
-├── results/                   # Evaluation results and figures
-├── README.md                  # This file
-└── requirements.txt           # Python dependencies
+- Obtain a free key from `https://the-odds-api.com` (free tier: 500 requests/month).
+- The code reads `ODDS_API_KEY` from the environment; `.env.example` documents all relevant variables.
+
+#### 3. Train (or retrain) models
+
+If models are not present or you want to refresh them:
+
+```bash
+source venv/bin/activate
+python src/final_ml_models.py
 ```
 
-## Academic Integrity
+- Uses `data/processed/engineered_features.csv`.
+- Removes leakage-prone columns, prepares features, trains logistic regression and random forest, and saves models plus encoders and feature schema to `models/`.
 
-This project is developed for CPSC 1710 coursework. All data sources are publicly available, and methodologies follow standard machine learning practices. The team commits to:
+### Running Predictions
 
-- Original implementation and analysis
-- Proper citation of data sources and methodological references
-- Transparent reporting of results, including negative findings
-- Collaborative development with clear individual contributions
-- Adherence to course guidelines and academic standards
+#### Option A: Standard daily predictions (ensemble models)
 
----
+```bash
+source venv/bin/activate
+python src/daily_predictions.py
+```
 
-**Contact**: [Team member emails/GitHub profiles]
-**Course**: CPSC 1710 - Introduction to Machine Learning
-**Institution**: [University Name]
-**Semester**: Fall 2024
+- Loads serialized models and feature definitions from `models/`.
+- Loads historical feature data from `data/processed/engineered_features.csv`.
+- Fetches todays NBA player props and odds via `NBAOddsClient`.
+- Generates ensemble predictions for each prop and filters to high-confidence picks (confidence > 0.6 and full model agreement).
+- Prints human-readable recommendations and writes all predictions to `data/processed/daily_predictions_<timestamp>.csv`.
+
+#### Option B: Final prediction system with richer context
+
+```bash
+source venv/bin/activate
+python src/final_predictions_system.py
+```
+
+- Uses the same historical dataset and models but adds:
+  - Momentum signals (short-term trends and streaks).
+  - Team chemistry and usage share estimates.
+  - Individual matchup history versus specific opponents.
+- Produces context-rich recommendations with descriptive insights (form, chemistry, matchup history) and saves outputs under `data/processed/final_predictions_<timestamp>.csv`.
+
+#### Option C: Complete 9-iteration analytics (advanced experimentation)
+
+```bash
+source venv/bin/activate
+python src/advanced_analytics_v6.py
+```
+
+- Uses `CompleteNBAPredictor` to combine:
+  - Evidence-based features (e.g., home-court advantage, rest).
+  - Matchup analytics (player vs team, role, usage).
+  - Advanced seasonal/peak/pressure signals.
+- Intended for research/experimentation; outputs `data/processed/ultimate_predictions_<timestamp>.csv`.
+
+### Testing and Validation
+
+- **Unit tests** (`tests/unit/`)
+  - `test_ml_models.py`: Data loading, feature preparation, trainer behavior, evaluation helpers, scaling wrapper (`ScaledLogisticRegression`).
+  - `test_daily_predictions.py`: Initialization, model loading, feature generation, prediction logic, display formatting, and edge cases.
+  - `test_odds_api_client.py`: API client behavior and formatting of Odds API responses.
+- **Integration tests** (`tests/integration/`)
+  - `test_end_to_end_pipeline.py`: Model training, saving, loading, API-to-ML data flow, and prediction readiness under realistic scenarios.
+- **Validation tests** (`tests/validation/`)
+  - `test_data_validation.py`: Data-quality and model-behavior checks (no look-ahead bias, realistic ranges, balanced target, feature importance sanity).
+
+Run the full test suite with:
+
+```bash
+source venv/bin/activate
+pytest
+```
+
+### Data & Model Assumptions
+
+- **Historical coverage**: Engineered features are built from multi-season NBA logs up to the most recent season present in `engineered_features.csv`.
+- **Players**: Original configuration focused on a curated set of high-usage players; the feature pipeline is capable of supporting a broader pool as data is added.
+- **Targets**: Binary over/under outcomes relative to a player-specific threshold (`over_threshold`).
+- **Markets**: Points, rebounds, and assists are fully supported; other markets can be added by extending feature engineering and training scripts.
+
+### Current Limitations and Future Improvements
+
+- **Player coverage**: Engineered data and thresholds are optimized for a limited set of players; extending to 30-50+ players requires updating `engineered_features.csv` and retraining models.
+- **Data freshness**: Historical data stops at the last ingested season; periodic ingestion of new seasons/games and automated re-training would improve robustness.
+- **Scheduling and automation**: Prediction scripts are designed for manual execution; a scheduler (cron, Airflow, etc.) and centralized logging would make this production-grade.
+- **Backtesting and monitoring**: Predictions are stored in CSVs; a database-backed results log and dashboards would enable long-horizon performance monitoring and strategy iteration.
+- **Deployment**: The system is optimized for local execution; containerization and simple APIs/CLI wrappers would simplify remote deployment or integration with UIs.
+
+### Disclaimer
+
+This repository is for **educational and research purposes only**. Sports betting involves financial risk; there is no guarantee of profit. Always gamble responsibly and comply with local laws.

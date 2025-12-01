@@ -76,6 +76,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.metrics import roc_auc_score, log_loss, classification_report, confusion_matrix
 from sklearn.calibration import CalibratedClassifierCV
 import joblib
+from scaled_lr import ScaledLogisticRegression
 
 # Install XGBoost if not available
 try:
@@ -105,19 +106,52 @@ def load_and_prepare_data():
 
     return data
 
-def create_temporal_train_test_split(data, test_size=0.2):
-    """Create temporal train/test split to prevent look-ahead bias."""
+def create_stratified_train_test_split(data, test_size=0.1):
+    """Create stratified train/test split with 90% train / 10% test across all years."""
 
-    print(f"\nCreating temporal train/test split ({int((1-test_size)*100)}/{int(test_size*100)})...")
+    print(f"\nCreating stratified train/test split ({int((1-test_size)*100)}/{int(test_size*100)}) across all years...")
 
-    # Sort by date to ensure temporal order
-    data_sorted = data.sort_values('gameDate').copy()
+    # Convert gameDate to datetime and extract year
+    data = data.copy()
+    data['gameDate'] = pd.to_datetime(data['gameDate'], errors='coerce')
+    data['year'] = data['gameDate'].dt.year
 
-    # Split based on date cutoff
-    cutoff_idx = int(len(data_sorted) * (1 - test_size))
+    # Show year distribution
+    year_counts = data['year'].value_counts().sort_index()
+    print(f"✓ Data spans {len(year_counts)} years: {year_counts.to_dict()}")
 
-    train_data = data_sorted.iloc[:cutoff_idx].copy()
-    test_data = data_sorted.iloc[cutoff_idx:].copy()
+    train_data_list = []
+    test_data_list = []
+
+    # Stratified sampling within each year
+    for year in data['year'].unique():
+        if pd.isna(year):
+            continue
+
+        year_data = data[data['year'] == year].copy()
+
+        # Use sklearn's train_test_split for stratified sampling
+        from sklearn.model_selection import train_test_split
+
+        year_train, year_test = train_test_split(
+            year_data,
+            test_size=test_size,
+            stratify=year_data['over_threshold'],  # Stratify by target variable
+            random_state=42
+        )
+
+        train_data_list.append(year_train)
+        test_data_list.append(year_test)
+
+        print(f"  {int(year)}: {len(year_train):,} train, {len(year_test):,} test")
+
+    # Combine all years
+    train_data = pd.concat(train_data_list, ignore_index=True)
+    test_data = pd.concat(test_data_list, ignore_index=True)
+
+    # Sort by date for consistency
+    train_data = train_data.sort_values('gameDate').reset_index(drop=True)
+    test_data = test_data.sort_values('gameDate').reset_index(drop=True)
 
     print(f"✓ Train: {len(train_data):,} games ({train_data['gameDate'].min().date()} to {train_data['gameDate'].max().date()})")
     print(f"✓ Test: {len(test_data):,} games ({test_data['gameDate'].min().date()} to {test_data['gameDate'].max().date()})")
@@ -203,20 +237,6 @@ def evaluate_model(model, X_test, y_test, model_name):
     return metrics, y_pred, y_proba
 
 
-class ScaledLogisticRegression:
-    """Module-level wrapper that scales inputs before calling a sklearn LogisticRegression.
-
-    Defining this at module scope makes it picklable by joblib/pickle.
-    """
-    def __init__(self, model, scaler):
-        self.model = model
-        self.scaler = scaler
-
-    def predict(self, X):
-        return self.model.predict(self.scaler.transform(X))
-
-    def predict_proba(self, X):
-        return self.model.predict_proba(self.scaler.transform(X))
 
 class MLModelTrainer:
     """Main class for training and evaluating ML models."""
@@ -415,8 +435,8 @@ def main():
     # Step 1: Load and prepare data
     data = load_and_prepare_data()
 
-    # Step 2: Create temporal splits
-    train_data, test_data = create_temporal_train_test_split(data)
+    # Step 2: Create stratified splits (90% train / 10% test from each year)
+    train_data, test_data = create_stratified_train_test_split(data)
 
     # Step 3: Prepare features
     X_train, X_test, y_train, y_test, feature_cols, label_encoders = prepare_features(train_data, test_data)
