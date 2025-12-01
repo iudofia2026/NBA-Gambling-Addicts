@@ -1,0 +1,13 @@
+player,stat,predicted,actual,difference,minutes
+Nikola Jokic,points,18.2,24,5.800000000000001,38
+Nikola Jokic,rebounds,11.4,13,1.5999999999999996,38
+Nikola Jokic,assists,3.5,9,5.5,38
+Tobias Harris,points,15.2,18,2.8000000000000007,32
+Tobias Harris,rebounds,7.1,8,0.9000000000000004,32
+Tobias Harris,assists,2.5,3,0.5,32
+Devin Booker,points,19.4,21,1.6000000000000014,35
+Devin Booker,rebounds,3.3,4,0.7000000000000002,35
+Devin Booker,assists,3.9,6,2.1,35
+Kevin Durant,points,25.3,27,1.6999999999999993,36
+Kevin Durant,rebounds,4.1,7,2.9000000000000004,36
+Kevin Durant,assists,2.3,4,1.7000000000000002,36

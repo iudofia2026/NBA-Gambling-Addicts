@@ -1,0 +1,19 @@
+player,team,opponent,stat_type,line,predicted,actual,our_prediction,actual_result,correct,over_odds,under_odds
+Karl-Anthony Towns,Knicks,Raptors,points,21.5,20.3,22,UNDER,OVER,False,-110,-110
+Karl-Anthony Towns,Knicks,Raptors,rebounds,9.5,11.0,8,OVER,UNDER,False,-105,-125
+Karl-Anthony Towns,Knicks,Raptors,assists,2.5,1.5,2,UNDER,UNDER,True,-115,-105
+Mikal Bridges,Knicks,Raptors,points,13.5,9.5,14,UNDER,OVER,False,-120,-100
+Mikal Bridges,Knicks,Raptors,rebounds,4.5,4.1,3,UNDER,UNDER,True,-110,-110
+Mikal Bridges,Knicks,Raptors,assists,3.5,2.1,3,UNDER,UNDER,True,-125,-105
+Rudy Gobert,Wolves,Spurs,points,7.5,7.7,8,OVER,OVER,True,-110,-110
+Rudy Gobert,Wolves,Spurs,rebounds,11.5,10.2,8,UNDER,UNDER,True,-120,-100
+Rudy Gobert,Wolves,Spurs,assists,1.5,1.2,2,UNDER,OVER,False,-130,100
+Harrison Barnes,Spurs,Wolves,points,11.5,12.3,5,OVER,UNDER,False,-115,-105
+Harrison Barnes,Spurs,Wolves,rebounds,5.5,6.2,5,OVER,UNDER,False,-110,-110
+Harrison Barnes,Spurs,Wolves,assists,2.5,1.5,0,UNDER,UNDER,True,-140,110
+Kevin Durant,Rockets,Jazz,points,24.5,23.3,25,UNDER,OVER,False,-125,-105
+Kevin Durant,Rockets,Jazz,rebounds,6.5,5.0,7,UNDER,OVER,False,-110,-110
+Kevin Durant,Rockets,Jazz,assists,4.5,2.2,4,UNDER,UNDER,True,-115,-105
+James Harden,Clippers,Mavericks,points,22.5,15.6,29,UNDER,OVER,False,-120,-100
+James Harden,Clippers,Mavericks,rebounds,6.5,4.5,8,UNDER,OVER,False,-105,-125
+James Harden,Clippers,Mavericks,assists,8.5,3.6,11,UNDER,OVER,False,-110,-110
