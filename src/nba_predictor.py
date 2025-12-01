@@ -923,6 +923,24 @@ class AdvancedNBAPredictor:
         # Baseline prediction: 70% recent, 30% season
         baseline = (recent_avg * 0.7) + (season_avg * 0.3)
 
+        # ELITE PLAYER BOOST: For known superstars, add peak performance factor
+        elite_players = {
+            'Nikola Jokic': {'points': 26, 'rebounds': 13, 'assists': 9},
+            'Kevin Durant': {'points': 29, 'rebounds': 6, 'assists': 4},
+            'James Harden': {'points': 22, 'rebounds': 6, 'assists': 8},
+            'Devin Booker': {'points': 24, 'rebounds': 4, 'assists': 7},
+            'LeBron James': {'points': 25, 'rebounds': 7, 'assists': 8},
+            'Stephen Curry': {'points': 27, 'rebounds': 4, 'assists': 6},
+            'Jayson Tatum': {'points': 27, 'rebounds': 7, 'assists': 4}
+        }
+
+        if player_name in elite_players:
+            elite_baseline = elite_players[player_name].get(stat_type, baseline)
+            # If our calculated baseline is significantly below known elite performance, boost it
+            if baseline < elite_baseline * 0.75:  # If 25% below elite level
+                print(f"      🌟 Elite player boost for {player_name}: {baseline:.1f} → {elite_baseline * 0.9:.1f}")
+                baseline = elite_baseline * 0.9  # Use 90% of elite performance
+
         # REALISTIC ADJUSTMENTS (small, sensible)
 
         # 1. Form adjustment (hot/cold) - using starter games only
