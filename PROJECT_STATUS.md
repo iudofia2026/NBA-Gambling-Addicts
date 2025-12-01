@@ -1,148 +1,168 @@
-## Implementation Overview
+# NBA Betting Model - Project Status
 
-- **Goal**: Predict NBA player prop outcomes (over/under) using historical data, engineered features, and ensemble ML models, integrated with live betting odds.
-- **Components**: Data preparation, feature engineering, model training, prediction systems, Odds API client, and test/validation layers.
-- **Execution modes**: Standard daily predictions, final context-rich system, and an experimental complete-iterations predictor.
+## ⚠️ CRITICAL UPDATE: ACCURACY CORRECTION
 
-## Data Pipeline
+**Date**: December 1, 2024
+**Status**: 🔍 **DATA LEAKAGE IDENTIFIED AND FIXED**
+**Realistic Accuracy**: **53.0%** (not 96.3%)
+**Improvement Needed**: +7% to reach 60% target
 
-- **Input sources**
-  - Processed historical dataset in `data/processed/engineered_features.csv` produced from raw NBA box score and schedule data.
-  - Auxiliary processed artifacts (cleaning summaries, age analysis, feature importance) used for analysis and reporting.
-- **Cleaning and preprocessing** (`data_cleaning.py`)
-  - Standardizes date formats and identifiers.
-  - Handles missing values and inconsistent records.
-  - Ensures per-player chronological ordering of games.
-- **Feature engineering** (`feature_engineering.py`, `advanced_features_v1.py`, `evidence_features_v4.py`, `matchup_analytics_v5.py`, `advanced_analytics_v6.py`)
-  - Rolling averages over multiple windows (3/5/10 games) for points, minutes, assists, and shooting metrics.
-  - Rest and schedule indicators (days of rest, back-to-back flags, games in recent windows).
-  - Trend and volatility metrics (over-streaks, threshold deltas, minutes trends, hot/cold streaks).
-  - Contextual attributes (season progression, month, weekday/weekend, home vs away, game type/label).
-  - Evidence-based factors (home-court advantage, recent context, opponent strength) and matchup analytics (player vs team history, role, usage, matchup composite scores).
-  - Advanced seasonal, peak-performance, team-dynamics, and situational-pressure features (streak detection, clutch/big-margin performance, team momentum, usage share, seasonal improvement).
+## What Happened? The Accuracy Drop Explained
 
-## Modeling and Training
+### The Problem: Data Leakage
+The initial 96.3% accuracy was **artificially inflated** due to data leakage:
+1. **Target leakage**: Using `over_threshold` in features
+2. **Temporal leakage**: Not shifting rolling windows properly
+3. **Current game data**: Using same-game stats as features
+4. **Unrealistic targets**: Using player averages instead of real betting lines
 
-- **Leakage-safe training** (`final_ml_models.py`)
-  - Loads `engineered_features.csv` and sorts by player and date.
-  - Removes direct target and outcome columns (e.g., `points`, `points_vs_threshold`, `points_per_minute`, `over_threshold`, `gameDate`, name/ID fields, current-game box-score stats) to prevent leakage.
-  - Retains only features that are knowable before tip-off (rolling windows, schedule features, trends, contextual and categorical features).
-  - Constructs temporal train/test splits based on game date (80/20 by time).
-- **Model types**
-  - Logistic Regression with standardized inputs and class-weight handling.
-  - Random Forest with tuned depth, split criteria, and class weights, using parallel training.
-  - Optional XGBoost model support via `ml_models.py` when the dependency is available.
-- **Feature preparation** (`ml_models.py`)
-  - Temporal splits per `create_temporal_train_test_split` to avoid look-ahead bias.
-  - `prepare_features` encodes categorical columns with `LabelEncoder` instances shared between train and test.
-  - Fills missing values and coerces all feature columns to numeric types.
-  - Returns feature matrices, targets, feature column lists, and encoders for downstream persistence.
-- **Evaluation** (`ml_models.py`, `final_ml_models.py`)
-  - Computes accuracy, precision, recall, F1, ROC AUC, and log loss on the hold-out period.
-  - Extracts feature importances (Random Forest) and saves aggregate model comparison tables to `data/processed` (e.g., `clean_ml_results.csv`).
-  - Validates that models outperform simple baselines (e.g., 5-game rolling average) and that metrics remain in valid ranges.
-- **Persistence** (`models/`)
-  - Saves trained models (e.g., `logistic_regression_model.pkl`, `random_forest_model.pkl`, `xgboost_model.pkl`).
-  - Stores `feature_columns.pkl` and `label_encoders.pkl` to align training and inference feature spaces.
+### The Fix: Robust Validation
+Implemented `robust_validation.py` with:
+- Proper temporal splits (train on past, test on future)
+- Leakage-free feature engineering
+- Walk-forward validation
+- Realistic prop line simulation
 
-## Prediction Systems
+## 📊 CURRENT REALISTIC PERFORMANCE
 
-- **`DailyPredictor` (`daily_predictions.py`)**
-  - Loads serialized models and shared feature metadata from `models/`.
-  - Loads historical feature data from `data/processed/engineered_features.csv`.
-  - For each player prop:
-    - Locates recent player history and constructs a game-context feature vector aligned with `feature_columns.pkl`.
-    - Applies stored `LabelEncoder` instances to categorical features; fills missing values.
-    - Obtains per-model predictions and probabilities, and aggregates them into an ensemble (majority vote plus average probabilities).
-  - Computes:
-    - Binary recommendation (OVER/UNDER).
-    - Confidence score (probability associated with the recommended side).
-    - Model agreement ratio and per-model prediction breakdown.
-  - Filters to high-confidence picks by requiring confidence > 0.6 and full agreement (`over_percentage` in {0.0, 1.0}).
-  - Displays structured console output and writes complete prediction tables to `data/processed/daily_predictions_<timestamp>.csv`.
+### Actual Results
+```
+Holdout Test Accuracy: 53.0%
+Baseline (majority class): 51.4%
+Net Improvement: +1.6%
+```
 
-- **`FinalNBAPredictionsSystem` (`final_predictions_system.py`)**
-  - Uses historical features to derive baseline performance and additional contextual layers:
-    - Player form (streaks, trends, variability-based confidence).
-    - Team chemistry (team momentum, player usage share, chemistry impact).
-    - Individual matchup history (average points vs opponent, over-rate, efficiency, trend, and sample-size confidence).
-  - Combines form, chemistry, matchup, and baseline into a weighted predicted value and confidence score.
-  - Generates recommendations for points and mapped rebounds markets, attaches interpretable insights (predicted value vs line, streak description, chemistry summary, matchup stats).
-  - Outputs final recommendations with richer narrative context and writes `final_predictions_<timestamp>.csv`.
+### Model Metrics
+- **Precision**: 52.4%
+- **Recall**: 34.8%
+- **F1-Score**: 41.8%
 
-- **`CompleteNBAPredictor` and advanced analytics (`advanced_analytics_v6.py`)**
-  - Integrates evidence-based features, matchup analytics, and advanced seasonal/pressure features into a single predictor.
-  - Computes a total adjustment to a baseline based on:
-    - Evidence-based adjustment (e.g., home/away, rest, recent form).
-    - Composite matchup scores (player vs opponent team characteristics).
-    - Advanced analytics composite adjustment (seasonal improvement, peak usage, team momentum, clutch performance).
-  - Produces an ultimate predicted value and combined confidence, filtering out low-confidence cases.
-  - Outputs enriched CSVs (`ultimate_predictions_<timestamp>.csv`) for experimentation and analysis.
+### Feature Importance (Leakage-Free)
+1. Efficiency (historical): 18.5%
+2. Points avg (10 games): 18.1%
+3. Points variability: 16.9%
+4. Minutes avg (5 games): 15.2%
+5. Recent points (3 games): 12.6%
 
-## Odds API Integration
+## 🎯 IMPROVEMENT ROADMAP: From 53% to 60%+
 
-- **Client** (`odds_api_client.py`)
-  - Wraps The Odds API for NBA game and player prop retrieval.
-  - Implements request construction, error handling, and basic rate-limit awareness (e.g., using `x-requests-remaining` header).
-  - Exposes methods such as `get_all_todays_player_props` and `get_player_props_for_game`.
-  - Formats raw API responses into ML-ready tables via `format_for_ml_pipeline` by:
-    - Normalizing field names (e.g., `fullName`, `gameDate`, `prop_line`, `market_type`, `home_team`, `away_team`, odds and bookmaker fields).
-    - Casting numeric and datetime fields to appropriate dtypes.
+### Phase 1: Fix Fundamental Issues (+5-7%)
 
-## Testing and Validation
+**1. Real Betting Lines**
+- Current: Using player's own average as "prop line"
+- Issue: Creates easy target (player > their average)
+- Fix: Source historical betting lines
+- Expected: +3-4%
 
-- **Unit tests**
-  - `tests/unit/test_ml_models.py`: Verifies data loading behavior, temporal splitting, feature preparation (including leakage exclusion and categorical encoding), model evaluation utilities, trainer behavior, and the `ScaledLogisticRegression` wrapper.
-  - `tests/unit/test_daily_predictions.py`: Covers initialization paths, model/feature/encoder loading, historical data access, feature generation for predictions, ensemble logic and disagreement handling, prediction display, and edge cases (NaNs, missing features, unknown players).
-  - `tests/unit/test_odds_api_client.py`: Validates API client behavior, request/response handling, and ML-format conversion (column presence and type sanity checks).
+**2. Better Target Definition**
+- Current: Player > 10-game average
+- Fix: Player > actual sportsbook line
+- Expected: +2-3%
 
-- **Integration tests** (`tests/integration/test_end_to_end_pipeline.py`)
-  - Emulate full training workflows: mock data ingestion, temporal splitting, feature prep, model training, and artifact persistence.
-  - Emulate full prediction workflows: model loading, historical data access, mocked API calls, data formatting, prediction generation, and CSV persistence.
-  - Validate that training and prediction stages can be chained realistically with mocked external dependencies.
+### Phase 2: Enhanced Features (+2-3%)
 
-- **Validation tests** (`tests/validation/test_data_validation.py`)
-  - Check data ranges (points, minutes, prop lines, odds) for realism.
-  - Confirm absence of look-ahead bias in temporal splits and rolling features.
-  - Enforce reasonable class balance for the target and sufficient variability in predictions.
-  - Verify feature importance distributions, metric ranges, and basic model performance (better than random, non-degenerate predictions).
+**1. Matchup Analytics**
+- Historical performance vs opponent
+- Opponent defensive rating
+- Pace adjustments
+- Expected: +1-2%
 
-## Operational Characteristics
+**2. Team Context**
+- Team offensive/defensive efficiency
+- Key player injuries
+- Back-to-back status
+- Expected: +1%
 
-- **Runtime behavior**
-  - Daily prediction scripts complete within seconds to minutes on typical hardware for a days worth of player props.
-  - Requests to The Odds API remain within free-tier limits when run once per day.
-- **Execution patterns**
-  - Manual CLI execution of training and prediction scripts via Python entry points in `src/`.
-  - Model artifacts and prediction outputs persisted as files for later inspection and analysis.
+### Phase 3: Model Optimization (+1-2%)
 
-## Known Limitations
+**1. Ensemble Methods**
+- Combine Random Forest, XGBoost, Logistic Regression
+- Weight by recent performance
+- Expected: +1%
 
-- **Player and data coverage**
-  - Engineered features and thresholds currently center on a limited set of high-usage players.
-  - Historical data is capped at the most recent ingested season and does not automatically update as new games are played.
-- **Operational constraints**
-  - No built-in job scheduler or orchestration for automatic daily runs.
-  - No centralized storage of predictions and outcomes beyond CSV exports.
-  - No live performance monitoring or alerting when models degrade.
-- **Data and feature gaps**
-  - No direct integration of injury or lineup information; dependence on the API to filter out inactive players.
-  - Limited opponent-specific contextual features beyond those engineered from historical box scores.
-  - No access to historical odds for full backtesting against market lines.
+**2. Advanced Features**
+- Shot quality data
+- Player tracking metrics
+- Usage rate changes
+- Expected: +1%
 
-## Improvement Opportunities
+## 📋 IMPLEMENTATION PLAN
 
-- **Data and coverage**
-  - Extend `engineered_features.csv` to additional players and seasons, including automatic ingestion of new games.
-  - Introduce data-versioning and external storage for large raw datasets.
-- **Modeling and evaluation**
-  - Add automated retraining pipelines (e.g., scheduled weekly/monthly runs) with tracked model versions.
-  - Incorporate calibration layers (Platt scaling, isotonic regression) and more granular evaluation by context (player archetype, game type, schedule conditions).
-  - Integrate richer opponent/team defensive profiles and on/off splits into the feature space.
-- **System and operations**
-  - Wrap prediction flows in scheduled jobs (cron, workflow managers) with logging and alerting.
-  - Persist predictions and realized outcomes to a database for long-term tracking and backtesting.
-  - Add containerization and lightweight APIs/CLIs to expose predictions to external services or user interfaces.
-- **Product and UX**
-  - Build a simple web or notebook dashboard for exploring daily recommendations and historical performance.
-  - Surface model confidence, feature attributions, and scenario analysis tools for power users.
+### Immediate Actions (Week 1)
+1. [ ] Source historical betting lines
+2. [ ] Recreate target variable with real lines
+3. [ ] Implement proper train/test split
+4. [ ] Baseline with real data
+
+### Short Term (Weeks 2-4)
+1. [ ] Add matchup-specific features
+2. [ ] Implement ensemble model
+3. [ ] Add defensive ratings
+4. [ ] Test on validation set
+
+### Medium Term (Months 1-2)
+1. [ ] Integrate injury data
+2. [ ] Add lineup information
+3. [ ] Implement market intelligence
+4. [ ] Optimize for high-confidence picks
+
+## 🔬 VALIDATION STRATEGY
+
+### Going Forward
+1. **Always use chronological splits**
+2. **Never use current game stats**
+3. **Validate with walk-forward testing**
+4. **Report both accuracy and vs baseline**
+
+### Target Metrics
+- Minimum acceptable: 55%
+- Good: 58-60%
+- Excellent: 65%+
+
+## 📊 LEARNINGS
+
+### Technical
+- Data leakage is subtle and dangerous
+- 53% is actually not bad (sports betting is hard)
+- Feature engineering matters more than model complexity
+- Always validate with temporal splits
+
+### Business
+- Professional bettors achieve 55-60%
+- Above 60% is exceptional
+- Consistency matters more than peak accuracy
+- Real-world constraints matter (injuries, lineups)
+
+## 🚨 NEXT STEPS
+
+### Priority 1: Fix Target Variable
+The biggest issue is using player averages instead of real betting lines. This alone should boost accuracy by 3-4%.
+
+### Priority 2: Get Real Data
+- Historical betting lines
+- Injury reports
+- Team news
+- Lineup changes
+
+### Priority 3: Focus Edges
+Instead of predicting all games:
+- Focus on high-confidence scenarios
+- Filter out uncertain situations
+- Target 65%+ on filtered set
+
+## 📞 STATUS SUMMARY
+
+**Honest Assessment**: The model currently performs at 53%, which is only slightly better than random. The initial 96.3% was due to data leakage.
+
+**Path Forward**: With proper data (real betting lines) and enhanced features, reaching 60% is achievable.
+
+**Timeline**: 4-6 weeks to implement improvements and reach 58-60% accuracy.
+
+**Key Lesson**: Always validate with temporal splits and be skeptical of high accuracy claims.
+
+---
+
+**Status**: 🔄 **IMPROVEMENT PHASE**
+**Next Review**: Weekly
+**Version**: 2.1 - Realistic Baseline
+*Last Updated: December 1, 2024*
