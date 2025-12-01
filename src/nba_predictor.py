@@ -925,8 +925,8 @@ class AdvancedNBAPredictor:
 
         # ELITE PLAYER BOOST: For known superstars, add peak performance factor
         elite_players = {
-            'Nikola Jokic': {'points': 26, 'rebounds': 13, 'assists': 9},
-            'Kevin Durant': {'points': 29, 'rebounds': 6, 'assists': 4},
+            'Nikola Jokic': {'points': 26, 'rebounds': 14, 'assists': 9},  # Boosted rebounds
+            'Kevin Durant': {'points': 30, 'rebounds': 6, 'assists': 4},   # Boosted points
             'James Harden': {'points': 22, 'rebounds': 6, 'assists': 8},
             'Devin Booker': {'points': 24, 'rebounds': 4, 'assists': 7},
             'LeBron James': {'points': 25, 'rebounds': 7, 'assists': 8},

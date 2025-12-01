@@ -1,0 +1,19 @@
+player_name,market_type,prop_line,recommendation,predicted_value,line_diff,confidence,over_odds,bookmaker,game_time,usage_trend,matchup_rating,fatigue_level,hot_cold,pace_impact
+Tobias Harris,player_points,10.5,UNDER,6.0,-4.5,0.85,2.75,Bovada,2025-12-02 00:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Tobias Harris,player_rebounds,5.5,UNDER,1.9,-3.6,0.85,2.25,Bovada,2025-12-02 00:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Tobias Harris,player_assists,2.5,UNDER,1.2,-1.3,0.85,2.46,BetOnline.ag,2025-12-02 00:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+James Harden,player_assists,7.5,UNDER,2.9,-4.6,0.85,2.9,Bovada,2025-12-02 00:30:00+00:00,N/A,N/A,N/A,N/A,N/A
+James Harden,player_points,21.5,UNDER,12.6,-8.9,0.85,3.1,Bovada,2025-12-02 00:30:00+00:00,N/A,N/A,N/A,N/A,N/A
+James Harden,player_rebounds,6.5,UNDER,4.3,-2.2,0.85,2.65,Bovada,2025-12-02 00:30:00+00:00,N/A,N/A,N/A,N/A,N/A
+Nikola Vucevic,player_assists,2.5,OVER,4.5,2.0,0.85,2.5,Bovada,2025-12-02 00:40:00+00:00,N/A,N/A,N/A,N/A,N/A
+Nikola Vucevic,player_points,13.5,UNDER,3.9,-9.6,0.85,3.1,Bovada,2025-12-02 00:40:00+00:00,N/A,N/A,N/A,N/A,N/A
+Nikola Vucevic,player_rebounds,7.5,UNDER,1.5,-6.0,0.85,3.0,Bovada,2025-12-02 00:40:00+00:00,N/A,N/A,N/A,N/A,N/A
+Nikola Jokic,player_assists,8.5,UNDER,0.4,-8.1,0.85,2.85,Bovada,2025-12-02 02:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Nikola Jokic,player_points,25.5,UNDER,14.5,-11.0,0.85,3.05,Bovada,2025-12-02 02:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Nikola Jokic,player_rebounds,14.5,UNDER,7.8,-6.7,0.85,2.6,Bovada,2025-12-02 02:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Kevin Durant,player_assists,4.5,UNDER,0.2,-4.3,0.85,3.05,Bovada,2025-12-02 02:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Kevin Durant,player_points,29.5,UNDER,12.3,-17.2,0.85,3.05,Bovada,2025-12-02 02:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Kevin Durant,player_rebounds,4.5,UNDER,3.2,-1.3,0.85,2.15,BetRivers,2025-12-02 02:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Devin Booker,player_assists,8.5,UNDER,0.4,-8.1,0.85,3.0,Bovada,2025-12-02 03:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Devin Booker,player_points,22.5,UNDER,6.9,-15.6,0.85,3.0,Bovada,2025-12-02 03:10:00+00:00,N/A,N/A,N/A,N/A,N/A
+Devin Booker,player_rebounds,4.5,UNDER,3.4,-1.1,0.85,2.25,BetRivers,2025-12-02 03:10:00+00:00,N/A,N/A,N/A,N/A,N/A
