@@ -76,6 +76,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.metrics import roc_auc_score, log_loss, classification_report, confusion_matrix
 from sklearn.calibration import CalibratedClassifierCV
 import joblib
+from scaled_lr import ScaledLogisticRegression
 
 # Install XGBoost if not available
 try:
@@ -236,20 +237,6 @@ def evaluate_model(model, X_test, y_test, model_name):
     return metrics, y_pred, y_proba
 
 
-class ScaledLogisticRegression:
-    """Module-level wrapper that scales inputs before calling a sklearn LogisticRegression.
-
-    Defining this at module scope makes it picklable by joblib/pickle.
-    """
-    def __init__(self, model, scaler):
-        self.model = model
-        self.scaler = scaler
-
-    def predict(self, X):
-        return self.model.predict(self.scaler.transform(X))
-
-    def predict_proba(self, X):
-        return self.model.predict_proba(self.scaler.transform(X))
 
 class MLModelTrainer:
     """Main class for training and evaluating ML models."""

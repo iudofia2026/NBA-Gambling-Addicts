@@ -26,6 +26,7 @@ warnings.filterwarnings('ignore')
 
 # Import our modules
 from odds_api_client import NBAOddsClient
+from scaled_lr import ScaledLogisticRegression
 
 class DailyPredictor:
     """Main class for generating daily NBA prop predictions."""
@@ -128,6 +129,7 @@ class DailyPredictor:
 
         # Update game-specific context
         latest_game['gameDate'] = pd.to_datetime(game_date)
+        latest_game['year'] = pd.to_datetime(game_date).year
 
         # Update team context (simplified - in production you'd want more sophisticated opponent analysis)
         # For now, we'll use the player's recent averages
