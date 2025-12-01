@@ -330,20 +330,26 @@ class FixedNBAPredictionsSystem:
             print("❌ No player props available")
             return None
 
-        # Group props by player and market
+        # Group props by player, market, AND line value to identify true duplicates
         player_props = {}
+        line_cache = {}  # Cache to avoid re-running model for same lines
 
         for _, prop in props_df.iterrows():
             player = prop['player_name']
             market = prop['market_type'].lower()
+            line_value = prop['line_value']
+
+            # Create unique key for player-market-line combination
+            unique_key = f"{player}_{market}_{line_value}"
 
             if player not in player_props:
                 player_props[player] = {}
             if market not in player_props[player]:
-                player_props[player][market] = []
+                player_props[player][market] = {}
+            if line_value not in player_props[player][market]:
+                player_props[player][market][line_value] = []
 
-            player_props[player][market].append({
-                'prop_line': prop['line_value'],
+            player_props[player][market][line_value].append({
                 'over_odds': prop['over_odds'],
                 'bookmaker': prop['bookmaker'],
                 'game_time': prop['game_time'],
@@ -353,39 +359,74 @@ class FixedNBAPredictionsSystem:
                 'playerteamName': prop.get('team', '')
             })
 
-        print(f"✅ Found props for {len(player_props)} players")
-        print(f"📊 Markets per player: {np.mean([len(m) for m in player_props.values()]):.1f}")
+        # Calculate statistics
+        total_players = len(player_props)
+        total_markets = sum(len(m) for m in player_props.values())
+        total_unique_lines = sum(len(m) for p in player_props.values() for m in p.values())
+
+        print(f"✅ Found props for {total_players} players")
+        print(f"📊 Total market types: {total_markets}")
+        print(f"🎯 Unique lines (deduplicated): {total_unique_lines}")
+        print(f"💰 Avg bookmakers per line: {sum(len(bookmakers) for p in player_props.values() for m in p.values() for bookmakers in m.values()) / total_unique_lines:.1f}")
 
         # Generate predictions
         print(f"\n🔮 GENERATING FINAL PREDICTIONS")
-        print(f"   Processing each player once with best odds")
+        print(f"   Processing each unique line once with best odds")
         print("-" * 50)
 
         all_predictions = []
 
-        for player_name, prop_data in player_props.items():
+        for player_name, player_markets in player_props.items():
             print(f"\n🎯 Analyzing: {player_name}")
 
-            # Determine opponent team
-            sample_prop = list(prop_data.values())[0][0]  # Get first prop to get teams
-            opponent_team = sample_prop['away_team'] if sample_prop['home_team'] == sample_prop.get('playerteamName', '') else sample_prop['home_team']
+            # Flatten player's prop data for prediction (group all markets for this player)
+            flattened_prop_data = {}
+
+            # Get game context from first prop
+            first_market = list(player_markets.values())[0]
+            first_line = list(first_market.values())[0]
+            first_prop = first_line[0]
+
+            opponent_team = first_prop['away_team'] if first_prop['home_team'] == first_prop.get('playerteamName', '') else first_prop['home_team']
 
             game_context = {
-                'game_date': sample_prop['gameDate'],
-                'home_team': sample_prop['home_team'],
-                'away_team': sample_prop['away_team'],
-                'player_team': sample_prop.get('playerteamName', ''),
+                'game_date': first_prop['gameDate'],
+                'home_team': first_prop['home_team'],
+                'away_team': first_prop['away_team'],
+                'player_team': first_prop.get('playerteamName', ''),
                 'opponent_team': opponent_team
             }
 
-            prediction = self.make_prediction(
-                player_name,
-                prop_data,
-                game_context
-            )
+            # Group markets with best odds (flatten the line structure)
+            for market, lines in player_markets.items():
+                # Convert lines dict to list format expected by make_prediction
+                market_props = []
+                for line_value, bookmakers in lines.items():
+                    # Find best odds for this line
+                    best_prop = max(bookmakers, key=lambda x: float(x['over_odds']) if isinstance(x['over_odds'], (int, float, str)) and str(x['over_odds']).replace('.', '', 1).isdigit() else 0)
+                    market_props.append({
+                        'prop_line': line_value,
+                        'over_odds': best_prop['over_odds'],
+                        'bookmaker': best_prop['bookmaker'],
+                        'game_time': best_prop['game_time'],
+                        'home_team': best_prop['home_team'],
+                        'away_team': best_prop['away_team'],
+                        'gameDate': best_prop['gameDate'],
+                        'playerteamName': best_prop.get('playerteamName', '')
+                    })
 
-            if prediction:
-                all_predictions.append(prediction)
+                if market_props:  # Only add if we have props for this market
+                    flattened_prop_data[market] = market_props
+
+            if flattened_prop_data:
+                prediction = self.make_prediction(
+                    player_name,
+                    flattened_prop_data,
+                    game_context
+                )
+
+                if prediction:
+                    all_predictions.append(prediction)
 
         if not all_predictions:
             print("\n❌ No high-confidence predictions generated")
