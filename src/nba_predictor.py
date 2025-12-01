@@ -324,7 +324,7 @@ class AdvancedNBAPredictor:
         """Load trained models."""
         print("\n📂 LOADING ML MODELS")
 
-        model_dir = '../models'
+        model_dir = 'models'
         model_files = {
             'random_forest': 'random_forest_model.pkl',
             'xgboost': 'xgboost_model.pkl'
