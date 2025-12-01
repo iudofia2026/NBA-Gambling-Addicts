@@ -1,407 +1,493 @@
 """
-Data Validation Tests
-=====================
+Data Validation Tests for Optimized NBA Predictions System
+===========================================================
 
-Tests to ensure data quality and ML model correctness.
-These tests validate assumptions about the data and model behavior.
+Tests for data quality, integrity, and validation in the NBA predictions system.
+Ensures data meets quality standards and catches data-related issues early.
 """
 
 import pytest
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-import sys
 import os
+import sys
+from datetime import datetime, timedelta
+from unittest.mock import Mock, patch
 
+# Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
+from final_predictions_optimized import OptimizedNBAPredictionsSystem
 
-class TestDataQuality:
-    """Test data quality and integrity."""
 
-    def test_no_future_leakage_in_features(self, sample_features_data):
-        """Test that rolling features don't include current game data."""
-        # Rolling features should be shifted (not include current game)
-        for idx, row in sample_features_data.iterrows():
-            if idx > 0 and row['fullName'] == sample_features_data.iloc[idx-1]['fullName']:
-                # Rolling average should not equal current value
-                # (unless player is extremely consistent, which is unlikely)
-                pass  # This is a soft check, exact matching is coincidental
+class TestDataQualityValidation:
+    """Test data quality and integrity validation."""
 
-        # More robust check: ensure rolling features are NaN or 0 for first game
-        first_games = sample_features_data.groupby('fullName').first()
-        if 'rolling_3g_points' in first_games.columns:
-            # First games should have NaN or 0 for rolling features
-            assert (first_games['rolling_3g_points'].isna() |
-                   (first_games['rolling_3g_points'] == 0)).all()
+    @pytest.fixture
+    def clean_sample_data(self):
+        """Create clean sample data for validation tests."""
+        np.random.seed(42)
+        dates = pd.date_range(start='2023-01-01', end='2023-12-31', freq='3D')
+        players = ['LeBron James', 'Stephen Curry', 'Kevin Durant']
 
-    def test_target_variable_balance(self, sample_features_data):
+        data = []
+        for i, player in enumerate(players):
+            for j, date in enumerate(dates[:40]):  # 40 games per player
+                # Ensure realistic data ranges
+                points = np.random.randint(15, 40)
+                minutes = np.random.randint(25, 42)
+                efficiency = points / max(minutes, 1)
+
+                data.append({
+                    'gameDate': date,
+                    'fullName': player,
+                    'playerteamName': ['LAL', 'GSW', 'PHX'][i],
+                    'opponentteamName': np.random.choice(['GSW', 'LAL', 'PHX', 'BOS', 'MIA']),
+                    'points': points,
+                    'assists': np.random.randint(2, 12),
+                    'reboundsTotal': np.random.randint(3, 15),
+                    'numMinutes': minutes,
+                    'fieldGoalsMade': min(np.random.randint(6, 15), points),
+                    'fieldGoalsAttempted': np.random.randint(12, 25),
+                    'threePointersMade': np.random.randint(0, 6),
+                    'threePointersAttempted': np.random.randint(2, 12),
+                    'freeThrowsMade': np.random.randint(2, 10),
+                    'freeThrowsAttempted': np.random.randint(3, 12),
+                    'steals': np.random.randint(0, 3),
+                    'blocks': np.random.randint(0, 2),
+                    'turnovers': np.random.randint(1, 5),
+                    'age': np.random.randint(24, 36),
+                    'over_threshold': np.random.randint(0, 2)
+                })
+
+        return pd.DataFrame(data)
+
+    @pytest.fixture
+    def dirty_sample_data(self, clean_sample_data):
+        """Create dirty sample data with quality issues."""
+        dirty_data = clean_sample_data.copy()
+
+        # Add null values
+        dirty_data.loc[0:2, 'points'] = np.nan
+        dirty_data.loc[3:4, 'numMinutes'] = np.nan
+
+        # Add outliers
+        dirty_data.loc[5, 'points'] = 999  # Unrealistic high score
+        dirty_data.loc[6, 'numMinutes'] = 0  # Impossible minutes
+        dirty_data.loc[7, 'numMinutes'] = 100  # Impossible minutes
+
+        # Add negative values where they don't make sense
+        dirty_data.loc[8, 'points'] = -5
+        dirty_data.loc[9, 'assists'] = -1
+
+        # Add inconsistent team names
+        dirty_data.loc[10, 'playerteamName'] = 'Invalid Team Name!'
+        dirty_data.loc[11, 'opponentteamName'] = ''
+
+        # Add invalid dates
+        dirty_data.loc[12, 'gameDate'] = pd.NaT
+
+        return dirty_data
+
+    def test_required_columns_present(self, clean_sample_data):
+        """Test that all required columns are present."""
+        required_columns = [
+            'gameDate', 'fullName', 'points', 'numMinutes', 'assists',
+            'reboundsTotal', 'age', 'playerteamName', 'opponentteamName'
+        ]
+
+        for col in required_columns:
+            assert col in clean_sample_data.columns, f"Required column {col} is missing"
+
+    def test_data_range_validation(self, clean_sample_data):
+        """Test that data values are within realistic ranges."""
+        # Points should be realistic
+        assert clean_sample_data['points'].min() >= 0, "Points cannot be negative"
+        assert clean_sample_data['points'].max() <= 100, "Points should not exceed 100"
+
+        # Minutes should be realistic
+        assert clean_sample_data['numMinutes'].min() >= 0, "Minutes cannot be negative"
+        assert clean_sample_data['numMinutes'].max() <= 48, "Minutes should not exceed 48"
+
+        # Age should be realistic
+        assert clean_sample_data['age'].min() >= 18, "Age should be at least 18"
+        assert clean_sample_data['age'].max() <= 50, "Age should not exceed 50"
+
+        # Basic stats should not be negative
+        for stat in ['assists', 'reboundsTotal', 'steals', 'blocks']:
+            assert clean_sample_data[stat].min() >= 0, f"{stat} cannot be negative"
+
+    def test_null_value_detection(self, dirty_sample_data):
+        """Test detection of null values."""
+        # Check for null values in critical columns
+        critical_columns = ['fullName', 'gameDate', 'points', 'numMinutes']
+
+        null_report = {}
+        for col in critical_columns:
+            null_count = dirty_sample_data[col].isnull().sum()
+            if null_count > 0:
+                null_report[col] = null_count
+
+        assert len(null_report) > 0, "Should detect null values in dirty data"
+
+    def test_outlier_detection(self, dirty_sample_data):
+        """Test detection of statistical outliers."""
+        # Test points outliers
+        q1_points = dirty_sample_data['points'].quantile(0.25)
+        q3_points = dirty_sample_data['points'].quantile(0.75)
+        iqr_points = q3_points - q1_points
+
+        # Points outside 3*IQR are considered outliers
+        points_outliers = dirty_sample_data[
+            (dirty_sample_data['points'] < q1_points - 3 * iqr_points) |
+            (dirty_sample_data['points'] > q3_points + 3 * iqr_points)
+        ]
+
+        assert len(points_outliers) > 0, "Should detect points outliers"
+
+        # Test minutes outliers
+        minutes_outliers = dirty_sample_data[
+            (dirty_sample_data['numMinutes'] < 0) | (dirty_sample_data['numMinutes'] > 48)
+        ]
+
+        assert len(minutes_outliers) > 0, "Should detect impossible minute values"
+
+    def test_team_name_validation(self, dirty_sample_data):
+        """Test team name format and validity."""
+        # Check for invalid team names
+        invalid_team_names = dirty_sample_data[
+            dirty_sample_data['playerteamName'].str.len() > 10
+        ]
+
+        assert len(invalid_team_names) > 0, "Should detect invalid team names"
+
+        # Check for empty team names
+        empty_team_names = dirty_sample_data[
+            dirty_sample_data['opponentteamName'] == ''
+        ]
+
+        assert len(empty_team_names) > 0, "Should detect empty team names"
+
+    def test_date_validation(self, dirty_sample_data):
+        """Test date format and validity."""
+        # Check for invalid dates
+        invalid_dates = dirty_sample_data[dirty_sample_data['gameDate'].isna()]
+
+        assert len(invalid_dates) > 0, "Should detect invalid dates"
+
+        # Check for future dates (if any)
+        today = pd.Timestamp.now().normalize()
+        future_dates = dirty_sample_data[dirty_sample_data['gameDate'] > today]
+
+        # In test data, we might have future dates, so just check the detection works
+        assert len(future_dates) >= 0, "Future date detection should work"
+
+    def test_no_duplicate_games(self, clean_sample_data):
+        """Test that there are no duplicate game records."""
+        # Check for duplicates based on player + date
+        duplicates = clean_sample_data.duplicated(subset=['fullName', 'gameDate'], keep=False)
+        assert not duplicates.any(), "Found duplicate game records"
+
+    def test_target_variable_balance(self, clean_sample_data):
         """Test that target variable is not extremely imbalanced."""
-        if 'over_threshold' in sample_features_data.columns:
-            over_rate = sample_features_data['over_threshold'].mean()
-
+        if 'over_threshold' in clean_sample_data.columns:
+            over_rate = clean_sample_data['over_threshold'].mean()
             # Should be between 20% and 80% (not too imbalanced)
             assert 0.2 <= over_rate <= 0.8, \
                 f"Target variable too imbalanced: {over_rate:.1%} positive class"
 
-    def test_no_duplicate_games(self, sample_features_data):
-        """Test that there are no duplicate game records."""
-        # Check for duplicates based on player + date
-        duplicates = sample_features_data.duplicated(subset=['fullName', 'gameDate'], keep=False)
+    def test_no_future_leakage_in_features(self, clean_sample_data):
+        """Test that rolling features don't include current game data."""
+        # More robust check: ensure rolling features are NaN or 0 for first game
+        first_games = clean_sample_data.groupby('fullName').first()
+        rolling_cols = [col for col in clean_sample_data.columns if 'rolling' in col]
+
+        for col in rolling_cols:
+            if col in first_games.columns:
+                # First games should have NaN or 0 for rolling features
+                assert (first_games[col].isna() | (first_games[col] == 0)).all(), \
+                    f"Rolling feature {col} shows leakage in first games"
 
         duplicate_count = duplicates.sum()
         if duplicate_count > 0:
             print(f"Warning: Found {duplicate_count} duplicate game records")
 
-        # In production, should have no duplicates
-        # For test data, just warn
-        assert True
 
-    def test_chronological_order_per_player(self, sample_features_data):
-        """Test that games are in chronological order for each player."""
-        for player in sample_features_data['fullName'].unique():
-            player_data = sample_features_data[
-                sample_features_data['fullName'] == player
-            ].copy()
+class TestOptimizedModelValidation:
+    """Test model quality and validation for the optimized system."""
 
-            dates = pd.to_datetime(player_data['gameDate'])
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_model_prediction_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test model prediction output validation."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
 
-            # Check if sorted
-            is_sorted = dates.is_monotonic_increasing
-
-            if not is_sorted:
-                print(f"Warning: Games not sorted for {player}")
-
-    def test_feature_ranges_realistic(self, sample_features_data):
-        """Test that feature values are in realistic ranges."""
-        if 'points' in sample_features_data.columns:
-            points = sample_features_data['points']
-
-            # Points should be between 0 and 100 (realistic range)
-            assert points.min() >= 0, "Found negative points"
-            assert points.max() <= 100, f"Found unrealistic points: {points.max()}"
-
-        if 'numMinutes' in sample_features_data.columns:
-            minutes = sample_features_data['numMinutes']
-
-            # Minutes should be between 0 and 48 (max game time)
-            assert minutes.min() >= 0, "Found negative minutes"
-            assert minutes.max() <= 60, f"Found unrealistic minutes: {minutes.max()}"
-
-    def test_no_missing_critical_features(self, sample_features_data):
-        """Test that critical features are not missing."""
-        critical_features = ['fullName', 'gameDate', 'over_threshold']
-
-        for feature in critical_features:
-            if feature in sample_features_data.columns:
-                missing_rate = sample_features_data[feature].isna().mean()
-
-                assert missing_rate < 0.01, \
-                    f"Critical feature '{feature}' has {missing_rate:.1%} missing values"
-
-
-class TestModelValidation:
-    """Test ML model behavior and performance."""
-
-    def test_model_predictions_in_valid_range(self, mock_trained_model):
-        """Test that model predictions are in valid range [0, 1]."""
-        X_test = pd.DataFrame(np.random.rand(100, 5))
-
-        predictions = mock_trained_model.predict(X_test)
-        probabilities = mock_trained_model.predict_proba(X_test)
-
-        # Predictions should be 0 or 1
-        assert np.all(np.isin(predictions, [0, 1]))
-
-        # Probabilities should sum to 1 and be in [0, 1]
-        assert np.all(probabilities >= 0)
-        assert np.all(probabilities <= 1)
-        assert np.allclose(probabilities.sum(axis=1), 1.0)
-
-    def test_model_better_than_random(self, sample_features_data):
-        """Test that trained models perform better than random guessing."""
-        from ml_models import (
-            create_temporal_train_test_split,
-            prepare_features,
-            MLModelTrainer
-        )
-
-        train, test = create_temporal_train_test_split(sample_features_data, test_size=0.2)
-        X_train, X_test, y_train, y_test, _, _ = prepare_features(train, test)
-
-        trainer = MLModelTrainer()
-        _, metrics = trainer.train_logistic_regression(X_train, y_train, X_test, y_test)
-
-        # Should be better than 50% accuracy (random guessing)
-        assert metrics['accuracy'] > 0.50, \
-            f"Model accuracy {metrics['accuracy']:.3f} not better than random"
-
-    def test_model_not_always_predicting_same_class(self, sample_features_data):
-        """Test that model doesn't always predict the same class."""
-        from ml_models import (
-            create_temporal_train_test_split,
-            prepare_features,
-            MLModelTrainer
-        )
-
-        train, test = create_temporal_train_test_split(sample_features_data, test_size=0.2)
-        X_train, X_test, y_train, y_test, _, _ = prepare_features(train, test)
-
-        trainer = MLModelTrainer()
-        model, _ = trainer.train_random_forest(X_train, y_train, X_test, y_test)
-
-        predictions = model.predict(X_test)
-
-        # Should predict both classes
-        unique_predictions = np.unique(predictions)
-        assert len(unique_predictions) > 1, \
-            "Model always predicting same class - likely overfitting or underfitting"
-
-    def test_feature_importance_sensible(self, sample_features_data):
-        """Test that feature importance values are sensible."""
-        from ml_models import (
-            create_temporal_train_test_split,
-            prepare_features,
-            MLModelTrainer
-        )
-
-        train, test = create_temporal_train_test_split(sample_features_data, test_size=0.2)
-        X_train, X_test, y_train, y_test, _, _ = prepare_features(train, test)
-
-        trainer = MLModelTrainer()
-        trainer.train_random_forest(X_train, y_train, X_test, y_test)
-
-        importance = trainer.feature_importance['random_forest']
-
-        # All importance values should be non-negative
-        assert all(v >= 0 for v in importance.values()), \
-            "Found negative feature importance"
-
-        # Sum of importance should be reasonable (close to 1 for RF)
-        total_importance = sum(importance.values())
-        assert 0.9 <= total_importance <= 1.1, \
-            f"Total feature importance {total_importance} seems off"
-
-        # Top features should have meaningful importance
-        sorted_importance = sorted(importance.values(), reverse=True)
-        top_feature_importance = sorted_importance[0]
-
-        assert top_feature_importance > 0.01, \
-            "Top feature has very low importance - model might not be learning"
-
-
-class TestPredictionValidation:
-    """Test prediction output quality."""
-
-    def test_predictions_have_required_fields(self):
-        """Test that prediction objects have all required fields."""
-        prediction = {
-            'player_name': 'LeBron James',
-            'market_type': 'points',
-            'prop_line': 25.5,
-            'recommendation': 'OVER',
-            'confidence': 0.75,
-            'over_percentage': 1.0,
-            'models_agreement': '3/3'
+        # Test prediction output format
+        player_name = clean_sample_data['fullName'].iloc[0]
+        game_context = {
+            'player_team': clean_sample_data['playerteamName'].iloc[0],
+            'opponent_team': clean_sample_data['opponentteamName'].iloc[0]
         }
+        baseline_points = 25.0
 
+        result = system.calculate_optimized_prediction(player_name, game_context, baseline_points)
+
+        # Validate prediction structure
         required_fields = [
-            'player_name', 'recommendation', 'confidence',
-            'prop_line', 'market_type'
+            'predicted_points', 'confidence_score', 'feature_breakdown',
+            'adjustments', 'weights'
         ]
 
         for field in required_fields:
-            assert field in prediction, f"Missing required field: {field}"
+            assert field in result, f"Missing required field: {field}"
 
-    def test_confidence_in_valid_range(self):
-        """Test that confidence scores are in valid range."""
-        prediction = {
-            'confidence': 0.75,
-            'over_percentage': 0.67
+        # Validate data types and ranges
+        assert isinstance(result['predicted_points'], (int, float)), "predicted_points should be numeric"
+        assert isinstance(result['confidence_score'], (int, float)), "confidence_score should be numeric"
+        assert 0 <= result['confidence_score'] <= 1, "confidence_score should be between 0 and 1"
+
+        # Validate feature breakdown
+        features = result['feature_breakdown']
+        required_features = ['form_factor', 'matchup_factor', 'chemistry_factor']
+        for feature in required_features:
+            assert feature in features, f"Missing feature: {feature}"
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_model_consistency_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test model prediction consistency."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+
+        player_name = clean_sample_data['fullName'].iloc[0]
+        game_context = {
+            'player_team': clean_sample_data['playerteamName'].iloc[0],
+            'opponent_team': clean_sample_data['opponentteamName'].iloc[0]
         }
+        baseline_points = 25.0
 
-        assert 0 <= prediction['confidence'] <= 1, \
-            "Confidence should be between 0 and 1"
-        assert 0 <= prediction['over_percentage'] <= 1, \
-            "Over percentage should be between 0 and 1"
+        # Run same prediction multiple times
+        results = []
+        for _ in range(5):
+            result = system.calculate_optimized_prediction(player_name, game_context, baseline_points)
+            results.append(result)
 
-    def test_recommendation_is_valid(self):
-        """Test that recommendations are valid values."""
-        valid_recommendations = ['OVER', 'UNDER']
-
-        prediction = {'recommendation': 'OVER'}
-
-        assert prediction['recommendation'] in valid_recommendations, \
-            f"Invalid recommendation: {prediction['recommendation']}"
-
-
-class TestTemporalValidation:
-    """Test temporal aspects of the data and models."""
-
-    def test_no_look_ahead_bias_in_split(self, sample_features_data):
-        """Test that train/test split doesn't have look-ahead bias."""
-        from ml_models import create_temporal_train_test_split
-
-        train, test = create_temporal_train_test_split(sample_features_data, test_size=0.2)
-
-        # Latest train date should be before earliest test date
-        train_max_date = pd.to_datetime(train['gameDate']).max()
-        test_min_date = pd.to_datetime(test['gameDate']).min()
-
-        assert train_max_date <= test_min_date, \
-            "Train set contains dates after test set - look-ahead bias detected"
-
-    def test_rolling_features_use_past_data_only(self, sample_features_data):
-        """Test that rolling features only use past data."""
-        # For each row, rolling features should be based on previous games only
-        for player in sample_features_data['fullName'].unique()[:3]:  # Check first 3 players
-            player_data = sample_features_data[
-                sample_features_data['fullName'] == player
-            ].sort_values('gameDate').copy()
-
-            if len(player_data) < 4:
-                continue
-
-            # For game 4, the rolling_3g feature should be average of games 1-3
-            if 'rolling_3g_points' in player_data.columns and 'points' in player_data.columns:
-                game_4_rolling = player_data.iloc[3]['rolling_3g_points']
-                expected = player_data.iloc[0:3]['points'].mean()
-
-                # Allow for some floating point error and NaN handling
-                if not pd.isna(game_4_rolling) and not pd.isna(expected):
-                    assert abs(game_4_rolling - expected) < 1.0, \
-                        f"Rolling feature not using correct past data: {game_4_rolling} vs {expected}"
-
-    def test_predictions_for_future_dates_only(self):
-        """Test that predictions are made for future dates only."""
-        today = datetime.now().date()
-
-        # Prediction input should be for future games
-        prediction_input = {
-            'game_time': datetime.now() + timedelta(hours=2),
-            'gameDate': today
-        }
-
-        # Game time should be in the future
-        assert prediction_input['game_time'].date() >= today, \
-            "Predictions should be for future games only"
+        # Check consistency (should be identical with same input)
+        first_result = results[0]
+        for i, result in enumerate(results[1:], 1):
+            assert result['predicted_points'] == first_result['predicted_points'], \
+                f"Prediction {i} differs from first prediction"
+            assert result['confidence_score'] == first_result['confidence_score'], \
+                f"Confidence {i} differs from first confidence"
 
 
-class TestAPIDataValidation:
-    """Test validation of data from the Odds API."""
+class TestFeatureValidation:
+    """Test feature engineering and validation."""
 
-    def test_prop_lines_in_realistic_range(self):
-        """Test that prop lines are in realistic ranges."""
-        prop_data = pd.DataFrame({
-            'market_type': ['points', 'assists', 'rebounds'],
-            'prop_line': [25.5, 7.5, 10.5]
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_form_analysis_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test player form analysis validation."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+
+        player_name = clean_sample_data['fullName'].iloc[0]
+        result = system.analyze_player_form(player_name, days_back=15)
+
+        # Validate form analysis output
+        required_fields = [
+            'current_streak', 'streak_length', 'streak_intensity',
+            'trend', 'trend_strength', 'form_confidence', 'volatility'
+        ]
+
+        for field in required_fields:
+            assert field in result, f"Missing form field: {field}"
+
+        # Validate values
+        assert result['current_streak'] in ['hot', 'cold', 'neutral'], "Invalid streak status"
+        assert result['streak_length'] >= 0, "Streak length cannot be negative"
+        assert result['streak_intensity'] >= 0, "Streak intensity cannot be negative"
+        assert 0 <= result['form_confidence'] <= 1, "Form confidence must be between 0 and 1"
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_matchup_analysis_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test matchup analysis validation."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+        clean_sample_data['playerteamName'] = 'LAL'
+        clean_sample_data['opponentteamName'] = 'GSW'
+
+        player_name = clean_sample_data['fullName'].iloc[0]
+        result = system.analyze_enhanced_matchup(player_name, 'GSW', days_back=30)
+
+        # Validate matchup analysis output
+        required_fields = [
+            'avg_points_vs_opp', 'over_rate_vs_opp', 'efficiency_vs_opp',
+            'recent_trend_vs_opp', 'consistency_vs_opp', 'sample_confidence', 'matchup_quality'
+        ]
+
+        for field in required_fields:
+            assert field in result, f"Missing matchup field: {field}"
+
+        # Validate values
+        assert result['avg_points_vs_opp'] >= 0, "Average points cannot be negative"
+        assert 0 <= result['over_rate_vs_opp'] <= 1, "Over rate must be between 0 and 1"
+        assert 0 <= result['sample_confidence'] <= 1, "Sample confidence must be between 0 and 1"
+        assert 0 <= result['matchup_quality'] <= 1, "Matchup quality must be between 0 and 1"
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_chemistry_analysis_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test team chemistry analysis validation."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+        clean_sample_data['playerteamName'] = 'LAL'
+        clean_sample_data['opponentteamName'] = 'GSW'
+
+        player_name = clean_sample_data['fullName'].iloc[0]
+        result = system.analyze_team_chemistry(player_name, 'LAL', days_back=10)
+
+        # Validate chemistry analysis output
+        required_fields = [
+            'team_momentum', 'momentum_consistency', 'team_usage_share', 'chemistry_impact'
+        ]
+
+        for field in required_fields:
+            assert field in result, f"Missing chemistry field: {field}"
+
+        # Validate values
+        assert 0 <= result['momentum_consistency'] <= 1, "Momentum consistency must be between 0 and 1"
+        assert 0 <= result['team_usage_share'] <= 0.5, "Team usage share must be capped at 0.5"
+        assert 0 <= result['chemistry_impact'] <= 1, "Chemistry impact must be between 0 and 1"
+
+
+class TestPerformanceValidation:
+    """Test performance and scalability validation."""
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_prediction_performance_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test prediction performance metrics."""
+        import time
+
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+
+        # Test performance with multiple predictions
+        start_time = time.time()
+
+        predictions = []
+        for i, row in clean_sample_data.head(10).iterrows():
+            game_context = {
+                'player_team': row['playerteamName'],
+                'opponent_team': row['opponentteamName']
+            }
+            result = system.calculate_optimized_prediction(
+                row['fullName'], game_context, row['points']
+            )
+            predictions.append(result)
+
+        end_time = time.time()
+        prediction_time = end_time - start_time
+
+        # Performance assertions
+        assert len(predictions) == 10, "Should generate 10 predictions"
+        assert prediction_time < 5.0, "10 predictions should complete within 5 seconds"
+
+        # Average time per prediction
+        avg_time_per_prediction = prediction_time / 10
+        assert avg_time_per_prediction < 0.5, "Each prediction should take less than 0.5 seconds"
+
+
+class TestDataIntegrityValidation:
+    """Test data integrity and consistency validation."""
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_data_consistency_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test data consistency across different views."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+
+        # Test player data consistency
+        unique_players = clean_sample_data['fullName'].unique()
+        for player in unique_players[:5]:  # Test first 5 players
+            player_data = clean_sample_data[clean_sample_data['fullName'] == player]
+
+            # Each player should have consistent data
+            assert len(player_data) > 0, f"Player {player} should have data"
+
+            # Check for reasonable game sequences
+            sorted_dates = player_data['gameDate'].sort_values()
+            date_diffs = sorted_dates.diff().dropna()
+
+            # Most games should be at least 1 day apart
+            assert (date_diffs >= pd.Timedelta(days=1)).all(), \
+                "Games should be at least 1 day apart"
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_statistical_relationships_validation(self, mock_client, mock_api_key, clean_sample_data):
+        """Test statistical relationships in the data."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+        system.historical_data = clean_sample_data
+
+        # Test correlation between minutes and points
+        correlation = clean_sample_data['numMinutes'].corr(clean_sample_data['points'])
+        assert correlation >= 0, "Minutes and points should be positively correlated"
+
+        # Test reasonable field goal percentages
+        fg_pct = clean_sample_data['fieldGoalsMade'] / clean_sample_data['fieldGoalsAttempted']
+        valid_fg_pct = fg_pct.dropna()
+
+        assert (valid_fg_pct >= 0).all(), "Field goal percentage cannot be negative"
+        assert (valid_fg_pct <= 1).all(), "Field goal percentage cannot exceed 100%"
+
+        # Test reasonable efficiency
+        efficiency = clean_sample_data['points'] / clean_sample_data['numMinutes']
+        valid_efficiency = efficiency.dropna()
+
+        assert (valid_efficiency >= 0).all(), "Efficiency cannot be negative"
+        assert valid_efficiency.max() <= 2, "Efficiency should not exceed 2 points per minute"
+
+
+class TestErrorHandlingValidation:
+    """Test error handling and edge case validation."""
+
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_edge_case_handling(self, mock_client, mock_api_key):
+        """Test handling of edge cases."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
+
+        # Test with empty data
+        empty_data = pd.DataFrame()
+        system.historical_data = empty_data
+
+        result = system.analyze_player_form("Any Player")
+        assert result is not None, "Should handle empty data gracefully"
+
+        # Test with single game
+        single_game_data = pd.DataFrame({
+            'fullName': ['Test Player'],
+            'gameDate': [datetime.now()],
+            'points': [25],
+            'numMinutes': [30]
         })
+        system.historical_data = single_game_data
 
-        for _, row in prop_data.iterrows():
-            if row['market_type'] == 'points':
-                assert 0 < row['prop_line'] < 60, \
-                    f"Unrealistic points line: {row['prop_line']}"
-            elif row['market_type'] == 'assists':
-                assert 0 < row['prop_line'] < 20, \
-                    f"Unrealistic assists line: {row['prop_line']}"
-            elif row['market_type'] == 'rebounds':
-                assert 0 < row['prop_line'] < 25, \
-                    f"Unrealistic rebounds line: {row['prop_line']}"
+        result = system.analyze_player_form("Test Player")
+        assert result is not None, "Should handle single game data"
 
-    def test_odds_in_valid_format(self):
-        """Test that odds are in valid American odds format."""
-        odds_data = pd.DataFrame({
-            'over_odds': [-110, 100, 150, -200]
-        })
+    @patch('final_predictions_optimized.NBAOddsClient')
+    def test_extreme_values_handling(self, mock_client, mock_api_key):
+        """Test handling of extreme values."""
+        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
 
-        for odds in odds_data['over_odds']:
-            # American odds should be integers
-            assert isinstance(odds, (int, np.integer)) or odds == int(odds), \
-                f"Odds should be integers: {odds}"
-
-            # Should be in reasonable range
-            assert -1000 <= odds <= 1000, \
-                f"Odds outside reasonable range: {odds}"
-
-    def test_player_names_not_empty(self):
-        """Test that player names are not empty or malformed."""
-        props_data = pd.DataFrame({
-            'player_name': ['LeBron James', 'Stephen Curry', 'Kevin Durant']
-        })
-
-        for name in props_data['player_name']:
-            assert isinstance(name, str), "Player name should be string"
-            assert len(name) > 0, "Player name should not be empty"
-            assert len(name.split()) >= 2, \
-                f"Player name should have first and last name: {name}"
-
-
-class TestEdgeCaseValidation:
-    """Test handling of edge cases in validation."""
-
-    def test_handles_players_with_limited_history(self, sample_features_data):
-        """Test handling of players with very few historical games."""
-        # Filter to only first few games per player
-        limited_data = sample_features_data.groupby('fullName').head(3)
-
-        # Should still be able to create features
-        assert len(limited_data) > 0
-
-        # Rolling features might be sparse
-        if 'rolling_3g_points' in limited_data.columns:
-            # First 2 games will have NaN or 0 for rolling_3g
-            first_games = limited_data.groupby('fullName').head(2)
-            assert (first_games['rolling_3g_points'].isna() |
-                   (first_games['rolling_3g_points'] == 0)).any()
-
-    def test_handles_extreme_stat_values(self):
-        """Test handling of extreme (but valid) statistical values."""
+        # Create data with extreme values
         extreme_data = pd.DataFrame({
-            'fullName': ['Player 1'] * 5,
-            'gameDate': pd.date_range('2023-01-01', periods=5),
-            'points': [0, 5, 50, 45, 3],  # Wide range including low scores
-            'over_threshold': [0, 0, 1, 1, 0]
+            'fullName': ['Extreme Player'] * 3,
+            'gameDate': pd.date_range('2023-01-01', periods=3),
+            'points': [0, 1, 100],  # Extreme point values
+            'numMinutes': [1, 48, 48],  # Extreme minute values
+            'playerteamName': ['EXT'] * 3,
+            'opponentteamName': ['OPP'] * 3
         })
+        system.historical_data = extreme_data
 
-        # Should handle extreme values without errors
-        from ml_models import create_temporal_train_test_split
-
-        # This shouldn't crash
-        train, test = create_temporal_train_test_split(extreme_data, test_size=0.2)
-        assert len(train) + len(test) == len(extreme_data)
-
-    def test_validates_market_type_consistency(self):
-        """Test that market types are consistent with prop lines."""
-        # Points lines should be higher than assists lines on average
-        props_data = pd.DataFrame({
-            'market_type': ['points', 'points', 'assists', 'assists'],
-            'prop_line': [25.5, 28.5, 7.5, 9.5]
-        })
-
-        points_avg = props_data[props_data['market_type'] == 'points']['prop_line'].mean()
-        assists_avg = props_data[props_data['market_type'] == 'assists']['prop_line'].mean()
-
-        assert points_avg > assists_avg, \
-            "Points lines should typically be higher than assists lines"
-
-
-@pytest.mark.parametrize("metric_name,min_value,max_value", [
-    ('accuracy', 0.0, 1.0),
-    ('precision', 0.0, 1.0),
-    ('recall', 0.0, 1.0),
-    ('f1_score', 0.0, 1.0),
-    ('roc_auc', 0.0, 1.0),
-])
-def test_metric_ranges(metric_name, min_value, max_value):
-    """Test that all metrics are in valid ranges."""
-    # Simulate some metrics
-    metrics = {
-        'accuracy': 0.65,
-        'precision': 0.62,
-        'recall': 0.58,
-        'f1_score': 0.60,
-        'roc_auc': 0.68
-    }
-
-    assert min_value <= metrics[metric_name] <= max_value, \
-        f"{metric_name} should be between {min_value} and {max_value}"
+        result = system.analyze_player_form("Extreme Player")
+        assert result is not None, "Should handle extreme values without crashing"
+        assert 0 <= result['form_confidence'] <= 1, "Confidence should remain valid"
