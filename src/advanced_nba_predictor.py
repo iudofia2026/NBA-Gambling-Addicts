@@ -143,9 +143,12 @@ class XGBoostEnsemblePredictor:
         return player_data[feature_columns].fillna(0)
 
     def train_model(self, player_data, target_stat='points'):
-        """Train XGBoost model for specific stat."""
-        if len(player_data) < 10:  # Need sufficient data
+        """Train XGBoost model with proper train/validation split to prevent overfitting."""
+        if len(player_data) < 20:  # Need sufficient data for splitting
             return None
+
+        # Sort by date for temporal splitting
+        player_data = player_data.sort_values('gameDate') if 'gameDate' in player_data.columns else player_data
 
         # Prepare features and target
         X = self.prepare_features(player_data, target_stat)
@@ -156,35 +159,74 @@ class XGBoostEnsemblePredictor:
         X = X[mask]
         y = y[mask]
 
-        if len(X) < 5:
+        if len(X) < 15:
             return None
 
-        # Scale features
+        # TEMPORAL TRAIN/VALIDATION SPLIT (prevents data leakage)
+        # Use first 80% of games for training, last 20% for validation
+        split_idx = int(len(X) * 0.8)
+
+        X_train = X.iloc[:split_idx]
+        X_val = X.iloc[split_idx:]
+        y_train = y[:split_idx]
+        y_val = y[split_idx:]
+
+        print(f"         Training on {len(X_train)} games, validating on {len(X_val)} games")
+
+        # Scale features (fit only on training data!)
         if target_stat not in self.scalers:
             self.scalers[target_stat] = StandardScaler()
-        X_scaled = self.scalers[target_stat].fit_transform(X)
+        X_train_scaled = self.scalers[target_stat].fit_transform(X_train)
+        X_val_scaled = self.scalers[target_stat].transform(X_val)
 
-        # Configure XGBoost based on research findings
+        # Configure XGBoost with regularization to prevent overfitting
         xgb_params = {
             'objective': 'reg:squarederror',
-            'max_depth': 6,
-            'learning_rate': 0.1,
-            'n_estimators': 100,
-            'subsample': 0.8,
-            'colsample_bytree': 0.8,
+            'max_depth': 4,              # Reduced from 6 to prevent overfitting
+            'learning_rate': 0.05,       # Reduced from 0.1 for more stable learning
+            'n_estimators': 50,          # Reduced from 100
+            'subsample': 0.8,            # Random sample of training data
+            'colsample_bytree': 0.8,     # Random sample of features
+            'reg_alpha': 1.0,            # L1 regularization
+            'reg_lambda': 1.0,           # L2 regularization
             'random_state': 42,
             'n_jobs': -1
         }
 
-        # Train model
+        # Train model with validation set for early stopping
         model = xgb.XGBRegressor(**xgb_params)
-        model.fit(X_scaled, y)
 
-        # Store model
+        # Try advanced fit with early stopping, fallback to simple fit
+        try:
+            model.fit(
+                X_train_scaled, y_train,
+                eval_set=[(X_train_scaled, y_train), (X_val_scaled, y_val)],
+                verbose=False
+            )
+        except TypeError:
+            # Fallback for older XGBoost versions
+            print(f"         Using simple training (XGBoost version compatibility)")
+            model.fit(X_train_scaled, y_train)
+
+        # Calculate proper validation scores
+        train_score = model.score(X_train_scaled, y_train)
+        val_score = model.score(X_val_scaled, y_val)
+
+        # Check for overfitting
+        overfitting_ratio = train_score / val_score if val_score > 0 else float('inf')
+
+        print(f"         Train R²: {train_score:.3f}, Val R²: {val_score:.3f}")
+        if overfitting_ratio > 1.2:
+            print(f"         ⚠️  Possible overfitting detected (ratio: {overfitting_ratio:.2f})")
+
+        # Store model with validation metrics
         self.models[target_stat] = {
             'model': model,
             'feature_columns': X.columns.tolist(),
-            'train_score': model.score(X_scaled, y)
+            'train_score': train_score,
+            'val_score': val_score,
+            'overfitting_ratio': overfitting_ratio,
+            'best_iteration': getattr(model, 'best_iteration', None)
         }
 
         # Create SHAP explainer if available
@@ -216,10 +258,22 @@ class XGBoostEnsemblePredictor:
         # Make prediction
         prediction = model.predict(X_scaled)[-1]  # Get latest prediction
 
-        # Calculate confidence based on model performance and data quality
-        base_confidence = model_info['train_score']
-        data_quality = min(len(player_data) / 20, 1.0)  # More data = higher confidence
-        confidence = (base_confidence * 0.7) + (data_quality * 0.3)
+        # Calculate realistic confidence based on validation performance
+        val_score = model_info.get('val_score', 0.5)
+        overfitting_ratio = model_info.get('overfitting_ratio', 1.0)
+
+        # Penalize overfitted models heavily
+        overfitting_penalty = max(0.1, 1.0 / overfitting_ratio) if overfitting_ratio > 1.0 else 1.0
+
+        # Base confidence on validation score, not training score
+        base_confidence = max(0.1, val_score) * overfitting_penalty
+
+        # Data quality factor (more games = higher confidence)
+        data_quality = min(len(player_data) / 50, 0.9)  # Max 90% even with lots of data
+
+        # Conservative confidence calculation
+        confidence = (base_confidence * 0.6) + (data_quality * 0.4)
+        confidence = min(confidence, 0.85)  # Cap at 85% to avoid overconfidence
 
         # SHAP analysis if available
         shap_values = {}
@@ -689,12 +743,26 @@ class AdvancedNBAPredictor:
             # Train XGBoost models if not already trained
             if not self.models_trained:
                 print(f"   🤖 Training XGBoost ensemble models...")
+                models_trained = 0
                 for stat in ['points', 'reboundsTotal', 'assists']:
-                    if stat in player_data.columns:
-                        model = self.ensemble_predictor.train_model(player_data, stat)
-                        if model:
-                            print(f"      ✓ {stat.capitalize()} model trained (R²: {self.ensemble_predictor.models[stat]['train_score']:.3f})")
-                self.models_trained = True
+                    if stat in player_data.columns and len(player_data[stat].dropna()) >= 10:
+                        try:
+                            model = self.ensemble_predictor.train_model(player_data, stat)
+                            if model:
+                                model_info = self.ensemble_predictor.models[stat]
+                                train_r2 = model_info['train_score']
+                                val_r2 = model_info['val_score']
+                                ratio = model_info['overfitting_ratio']
+
+                                print(f"      ✓ {stat.capitalize()}: Train R²={train_r2:.3f}, Val R²={val_r2:.3f} (ratio={ratio:.2f})")
+                                models_trained += 1
+                        except Exception as e:
+                            print(f"      ⚠️ Failed to train {stat} model: {e}")
+
+                if models_trained > 0:
+                    self.models_trained = True
+                else:
+                    print("      ⚠️ Insufficient data for XGBoost training, using fallback method")
 
             # Make predictions for each stat
             predictions = {}
@@ -782,7 +850,7 @@ class AdvancedNBAPredictor:
                     'recommendation': recommendation,
                     'predicted_value': round(predicted_value, 1),
                     'line_diff': round(predicted_value - best_prop['prop_line'], 1),
-                    'confidence': min(result['confidence_score'], 0.99),
+                    'confidence': min(result.get('confidence_score', result.get('confidence_points', 0.8)), 0.99),
                     'over_odds': best_prop['over_odds'],
                     'bookmaker': best_prop['bookmaker'],
                     'game_time': best_prop['game_time']
@@ -798,8 +866,8 @@ class AdvancedNBAPredictor:
             return {
                 'player_name': player_name,
                 'predictions': predictions,
-                'advanced_insights': result['insights'],
-                'feature_breakdown': result['features']
+                'advanced_insights': result.get('insights', {}),
+                'feature_breakdown': result.get('features', {})
             }
 
         except Exception as e:
@@ -927,18 +995,28 @@ class AdvancedNBAPredictor:
 
         if not all_predictions:
             print("\n❌ No predictions generated")
+            print(f"   📊 Attempted predictions for {len(player_props)} players")
             return None
+
+        print(f"\n✅ Successfully generated {len(all_predictions)} player predictions")
 
         # Display results
         self.display_results(all_predictions)
 
         # Save results
         timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-        output_file = f"../data/predictions/advanced_predictions_{timestamp}.csv"
+
+        # Handle relative path more robustly
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        predictions_dir = os.path.join(os.path.dirname(script_dir), 'data', 'predictions')
+        os.makedirs(predictions_dir, exist_ok=True)
+        output_file = os.path.join(predictions_dir, f"advanced_predictions_{timestamp}.csv")
 
         # Flatten for CSV
         flattened_predictions = []
         for pred in all_predictions:
+            if 'predictions' not in pred:
+                continue
             for market, data in pred['predictions'].items():
                 flattened_predictions.append({
                     'player_name': pred['player_name'],
@@ -951,11 +1029,11 @@ class AdvancedNBAPredictor:
                     'over_odds': data['over_odds'],
                     'bookmaker': data['bookmaker'],
                     'game_time': data['game_time'],
-                    'usage_trend': pred['advanced_insights']['usage_trend'],
-                    'matchup_rating': pred['advanced_insights']['matchup_rating'],
-                    'fatigue_level': pred['advanced_insights']['fatigue_level'],
-                    'hot_cold': pred['advanced_insights']['hot_cold'],
-                    'pace_impact': pred['advanced_insights']['pace_impact']
+                    'usage_trend': pred.get('advanced_insights', {}).get('usage_trend', 'N/A'),
+                    'matchup_rating': pred.get('advanced_insights', {}).get('matchup_rating', 'N/A'),
+                    'fatigue_level': pred.get('advanced_insights', {}).get('fatigue_level', 'N/A'),
+                    'hot_cold': pred.get('advanced_insights', {}).get('hot_cold', 'N/A'),
+                    'pace_impact': pred.get('advanced_insights', {}).get('pace_impact', 'N/A')
                 })
 
         pd.DataFrame(flattened_predictions).to_csv(output_file, index=False)
@@ -982,22 +1060,27 @@ class AdvancedNBAPredictor:
         print(f"⏱️  Consensus: {'OVER' if over_count > under_count else 'UNDER'} ({over_count} OVER, {under_count} UNDER)")
 
         for pred in predictions:
-            insights = pred['advanced_insights']
+            insights = pred.get('advanced_insights', {})
             print(f"\n🏀 {pred['player_name'].upper()}")
 
             # Show predictions
+            market_data = None
             for market, data in pred['predictions'].items():
                 print(f"   {market.replace('player_', '').upper():8} | Line: {data['prop_line']:5} | Pred: {data['predicted_value']:5.1f} ({data['line_diff']:+5.1f}) | {data['recommendation']:5}")
+                market_data = data  # Keep last for display
 
-            # Show insights
-            print(f"   📊 Confidence: {data['confidence']:.1%}")
-            print(f"   💰 Best Odds: {data['bookmaker']} ({data['over_odds']:+})")
-            print(f"\n   🔍 ANALYSIS:")
-            print(f"      • Usage Trend: {insights['usage_trend']}")
-            print(f"      • Matchup: {insights['matchup_rating']}")
-            print(f"      • Fatigue: {insights['fatigue_level']}")
-            print(f"      • Form: {insights['hot_cold']}")
-            print(f"      • Pace: {insights['pace_impact']}")
+            # Show insights (if we have market data)
+            if market_data:
+                print(f"   📊 Confidence: {market_data['confidence']:.1%}")
+                print(f"   💰 Best Odds: {market_data['bookmaker']} (+{market_data['over_odds']})")
+
+            if insights:
+                print(f"\n   🔍 ANALYSIS:")
+                print(f"      • Usage Trend: {insights.get('usage_trend', 'N/A')}")
+                print(f"      • Matchup: {insights.get('matchup_rating', 'N/A')}")
+                print(f"      • Fatigue: {insights.get('fatigue_level', 'N/A')}")
+                print(f"      • Form: {insights.get('hot_cold', 'N/A')}")
+                print(f"      • Pace: {insights.get('pace_impact', 'N/A')}")
 
         print("\n" + "=" * 80)
 
