@@ -13,8 +13,229 @@ from datetime import datetime, timedelta
 import warnings
 warnings.filterwarnings('ignore')
 
+# Advanced ML imports for research-based improvements
+from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+import xgboost as xgb
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+    print("SHAP not available, install with: pip install shap")
+
 # Import modules
 from odds_api_client import NBAOddsClient
+
+class AdvancedFeatureEngineering:
+    """
+    Advanced feature engineering based on 2024 research findings.
+    Implements lag features, rolling averages, efficiency metrics, and temporal trends.
+    """
+
+    @staticmethod
+    def create_lag_features(data, player_name, features=['points', 'reboundsTotal', 'assists'], lags=[1, 2, 3]):
+        """Create lag features for temporal analysis."""
+        player_data = data[data['fullName'] == player_name].copy().sort_values('gameDate')
+
+        for feature in features:
+            if feature in player_data.columns:
+                for lag in lags:
+                    player_data[f'{feature}_lag_{lag}'] = player_data[feature].shift(lag)
+
+        return player_data
+
+    @staticmethod
+    def create_rolling_features(data, windows=[3, 5, 10]):
+        """Create rolling average features."""
+        features_to_roll = ['points', 'reboundsTotal', 'assists', 'numMinutes']
+
+        for feature in features_to_roll:
+            if feature in data.columns:
+                for window in windows:
+                    data[f'{feature}_rolling_{window}'] = data[feature].rolling(window=window, min_periods=1).mean()
+                    data[f'{feature}_rolling_std_{window}'] = data[feature].rolling(window=window, min_periods=1).std()
+
+        return data
+
+    @staticmethod
+    def create_efficiency_features(data):
+        """Create advanced efficiency features based on research."""
+        # Points per minute efficiency
+        data['points_per_minute'] = data['points'] / (data['numMinutes'] + 1e-6)
+
+        # Overall efficiency rating
+        data['efficiency'] = (data['points'] + data['reboundsTotal'] + data['assists']) / (data['numMinutes'] + 1e-6)
+
+        # Usage proxy (points + assists + rebounds)
+        data['usage_proxy'] = data['points'] + data['assists'] + data['reboundsTotal']
+
+        # Performance consistency
+        for stat in ['points', 'reboundsTotal', 'assists']:
+            if stat in data.columns:
+                rolling_mean = data[f'{stat}_rolling_5'] if f'{stat}_rolling_5' in data.columns else data[stat].rolling(5, min_periods=1).mean()
+                rolling_std = data[f'{stat}_rolling_std_5'] if f'{stat}_rolling_std_5' in data.columns else data[stat].rolling(5, min_periods=1).std()
+                data[f'{stat}_consistency'] = 1 - (rolling_std / (rolling_mean + 1e-6))
+
+        return data
+
+    @staticmethod
+    def create_trend_features(data):
+        """Create trend analysis features."""
+        # Recent vs season trend
+        for stat in ['points', 'reboundsTotal', 'assists']:
+            if stat in data.columns and f'{stat}_rolling_3' in data.columns and f'{stat}_rolling_10' in data.columns:
+                data[f'{stat}_recent_trend'] = (data[f'{stat}_rolling_3'] - data[f'{stat}_rolling_10']) / (data[f'{stat}_rolling_10'] + 1e-6)
+
+        # Performance momentum (current vs previous game)
+        for stat in ['points', 'reboundsTotal', 'assists']:
+            if stat in data.columns and f'{stat}_lag_1' in data.columns:
+                data[f'{stat}_momentum'] = (data[stat] - data[f'{stat}_lag_1']) / (data[f'{stat}_lag_1'] + 1e-6)
+
+        return data
+
+
+class XGBoostEnsemblePredictor:
+    """
+    XGBoost ensemble predictor based on 2024 research.
+    Implements gradient boosting with residual fitting and SHAP interpretability.
+    """
+
+    def __init__(self):
+        """Initialize the XGBoost ensemble predictor."""
+        self.models = {}  # Store separate models for points, rebounds, assists
+        self.scalers = {}  # Feature scalers
+        self.shap_explainers = {} if SHAP_AVAILABLE else None
+
+    def prepare_features(self, player_data, stat_type='points'):
+        """Prepare feature matrix for XGBoost training."""
+        feature_columns = []
+
+        # Basic stats
+        basic_features = ['points', 'reboundsTotal', 'assists', 'numMinutes']
+        feature_columns.extend([col for col in basic_features if col in player_data.columns])
+
+        # Efficiency features
+        efficiency_features = ['points_per_minute', 'efficiency', 'usage_proxy']
+        feature_columns.extend([col for col in efficiency_features if col in player_data.columns])
+
+        # Rolling features
+        rolling_features = [col for col in player_data.columns if 'rolling' in col]
+        feature_columns.extend(rolling_features)
+
+        # Lag features
+        lag_features = [col for col in player_data.columns if 'lag_' in col]
+        feature_columns.extend(lag_features)
+
+        # Trend features
+        trend_features = [col for col in player_data.columns if 'trend' in col or 'momentum' in col]
+        feature_columns.extend(trend_features)
+
+        # Consistency features
+        consistency_features = [col for col in player_data.columns if 'consistency' in col]
+        feature_columns.extend(consistency_features)
+
+        # Remove duplicates and ensure all columns exist
+        feature_columns = list(set(feature_columns))
+        feature_columns = [col for col in feature_columns if col in player_data.columns]
+
+        return player_data[feature_columns].fillna(0)
+
+    def train_model(self, player_data, target_stat='points'):
+        """Train XGBoost model for specific stat."""
+        if len(player_data) < 10:  # Need sufficient data
+            return None
+
+        # Prepare features and target
+        X = self.prepare_features(player_data, target_stat)
+        y = player_data[target_stat].values
+
+        # Remove rows where target is NaN
+        mask = ~np.isnan(y)
+        X = X[mask]
+        y = y[mask]
+
+        if len(X) < 5:
+            return None
+
+        # Scale features
+        if target_stat not in self.scalers:
+            self.scalers[target_stat] = StandardScaler()
+        X_scaled = self.scalers[target_stat].fit_transform(X)
+
+        # Configure XGBoost based on research findings
+        xgb_params = {
+            'objective': 'reg:squarederror',
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'n_estimators': 100,
+            'subsample': 0.8,
+            'colsample_bytree': 0.8,
+            'random_state': 42,
+            'n_jobs': -1
+        }
+
+        # Train model
+        model = xgb.XGBRegressor(**xgb_params)
+        model.fit(X_scaled, y)
+
+        # Store model
+        self.models[target_stat] = {
+            'model': model,
+            'feature_columns': X.columns.tolist(),
+            'train_score': model.score(X_scaled, y)
+        }
+
+        # Create SHAP explainer if available
+        if SHAP_AVAILABLE:
+            explainer = shap.TreeExplainer(model)
+            self.shap_explainers[target_stat] = explainer
+
+        return model
+
+    def predict_with_confidence(self, player_data, target_stat='points'):
+        """Make prediction with confidence interval."""
+        if target_stat not in self.models:
+            return None, 0.0, {}
+
+        model_info = self.models[target_stat]
+        model = model_info['model']
+
+        # Prepare features
+        X = self.prepare_features(player_data, target_stat)
+
+        # Ensure feature alignment
+        for col in model_info['feature_columns']:
+            if col not in X.columns:
+                X[col] = 0
+
+        X = X[model_info['feature_columns']]
+        X_scaled = self.scalers[target_stat].transform(X.fillna(0))
+
+        # Make prediction
+        prediction = model.predict(X_scaled)[-1]  # Get latest prediction
+
+        # Calculate confidence based on model performance and data quality
+        base_confidence = model_info['train_score']
+        data_quality = min(len(player_data) / 20, 1.0)  # More data = higher confidence
+        confidence = (base_confidence * 0.7) + (data_quality * 0.3)
+
+        # SHAP analysis if available
+        shap_values = {}
+        if SHAP_AVAILABLE and target_stat in self.shap_explainers:
+            try:
+                explainer = self.shap_explainers[target_stat]
+                shap_vals = explainer.shap_values(X_scaled[-1:])
+                feature_importance = dict(zip(model_info['feature_columns'], shap_vals[0]))
+                # Get top 5 most important features
+                sorted_features = sorted(feature_importance.items(), key=lambda x: abs(x[1]), reverse=True)[:5]
+                shap_values = dict(sorted_features)
+            except Exception as e:
+                shap_values = {'error': str(e)}
+
+        return prediction, confidence, shap_values
+
 
 class AdvancedNBAPredictor:
     """Advanced NBA prediction system using 2024 research-based features."""
@@ -24,6 +245,11 @@ class AdvancedNBAPredictor:
         self.api_key = api_key or os.getenv('ODDS_API_KEY')
         if not self.api_key:
             raise ValueError("API key required")
+
+        # Initialize advanced components
+        self.feature_engineer = AdvancedFeatureEngineering()
+        self.ensemble_predictor = XGBoostEnsemblePredictor()
+        self.models_trained = False
 
         self.odds_client = NBAOddsClient(self.api_key)
         self.models = {}
@@ -303,12 +529,14 @@ class AdvancedNBAPredictor:
     def calculate_advanced_prediction(self, player_name, prop_data, game_context):
         """Calculate advanced prediction using all features."""
 
-        # Get baseline
+        # Get baseline for all stat types
         player_data = self.historical_data[self.historical_data['fullName'] == player_name]
         if player_data.empty:
             return None
 
         baseline_points = player_data['points'].tail(10).mean()
+        baseline_rebounds = player_data['reboundsTotal'].tail(10).mean()
+        baseline_assists = player_data['assists'].tail(10).mean()
 
         # Calculate all feature sets
         usage_features = self.calculate_usage_rate_features(player_name)
@@ -318,56 +546,80 @@ class AdvancedNBAPredictor:
         pace_features = self.calculate_pace_factor(game_context.get('player_team', ''), game_context['opponent_team'])
         market_features = self.calculate_market_signals(prop_data)
 
-        # Calculate weighted prediction
-        prediction_weights = {
-            'baseline': 0.15,          # Historical baseline
-            'usage': 0.20,             # Current usage rate
-            'matchup': 0.25,           # Defensive matchup
-            'advanced': 0.20,          # Advanced metrics
-            'pace': 0.10,              # Game pace
-            'fatigue': 0.05,           # Fatigue adjustment
-            'market': 0.05             # Market signals
-        }
+        # Calculate predictions for each stat type
+        def calculate_stat_prediction(baseline_value, stat_type='points'):
+            """Calculate prediction for a specific stat type."""
 
-        # Baseline component
-        baseline_component = baseline_points * prediction_weights['baseline']
+            prediction_weights = {
+                'baseline': 0.15,          # Historical baseline
+                'usage': 0.20,             # Current usage rate
+                'matchup': 0.25,           # Defensive matchup
+                'advanced': 0.20,          # Advanced metrics
+                'pace': 0.10,              # Game pace
+                'fatigue': 0.05,           # Fatigue adjustment
+                'market': 0.05             # Market signals
+            }
 
-        # Usage rate adjustment
-        usage_adjustment = baseline_points * (usage_features['usage_trend'] * 0.5 + 1) * prediction_weights['usage']
+            # Baseline component
+            baseline_component = baseline_value * prediction_weights['baseline']
 
-        # Matchup adjustment
-        matchup_multiplier = (
-            defensive_features['avg_points_vs_opp'] / baseline_points if baseline_points > 0 else 1
-        ) * defensive_features['opp_defensive_strength']
-        matchup_adjustment = baseline_points * matchup_multiplier * prediction_weights['matchup']
+            # Usage rate adjustment (affects all stats)
+            usage_adjustment = baseline_value * (usage_features['usage_trend'] * 0.5 + 1) * prediction_weights['usage']
 
-        # Advanced metrics adjustment
-        advanced_multiplier = (
-            1 + advanced_metrics['hot_cold_factor'] * 0.3 +
-            advanced_metrics['plus_minus_proxy'] * 0.2 +
-            advanced_metrics['current_pie'] * 0.1
-        )
-        advanced_adjustment = baseline_points * advanced_multiplier * prediction_weights['advanced']
+            # Matchup adjustment (stat-specific)
+            if stat_type == 'points':
+                matchup_multiplier = (
+                    defensive_features['avg_points_vs_opp'] / baseline_points if baseline_points > 0 else 1
+                ) * defensive_features['opp_defensive_strength']
+            elif stat_type == 'rebounds':
+                # Rebounds affected by opponent rebounding strength
+                matchup_multiplier = defensive_features['opp_defensive_strength'] * 0.9  # Slightly less impact
+            else:  # assists
+                # Assists affected by opponent pace and defense
+                matchup_multiplier = defensive_features['opp_defensive_strength'] * 1.1  # Slightly more impact
 
-        # Pace adjustment
-        pace_adjustment = baseline_points * pace_features['game_pace_factor'] * prediction_weights['pace']
+            matchup_adjustment = baseline_value * matchup_multiplier * prediction_weights['matchup']
 
-        # Fatigue adjustment (negative impact)
-        fatigue_penalty = baseline_points * fatigue_features['fatigue_score'] * -0.2 * prediction_weights['fatigue']
+            # Advanced metrics adjustment
+            advanced_multiplier = (
+                1 + advanced_metrics['hot_cold_factor'] * 0.3 +
+                advanced_metrics['plus_minus_proxy'] * 0.2 +
+                advanced_metrics['current_pie'] * 0.1
+            )
+            advanced_adjustment = baseline_value * advanced_multiplier * prediction_weights['advanced']
 
-        # Market sentiment adjustment (small effect)
-        market_adjustment = market_features['odds_consensus'] * 2 * prediction_weights['market']
+            # Pace adjustment (stronger for rebounds and assists)
+            pace_multiplier = pace_features['game_pace_factor']
+            if stat_type == 'rebounds':
+                pace_multiplier = pace_multiplier * 1.2  # More possessions = more rebounds
+            elif stat_type == 'assists':
+                pace_multiplier = pace_multiplier * 1.15  # More possessions = more assists
 
-        # Final prediction
-        predicted_points = (
-            baseline_component +
-            usage_adjustment +
-            matchup_adjustment +
-            advanced_adjustment +
-            pace_adjustment +
-            fatigue_penalty +
-            market_adjustment
-        )
+            pace_adjustment = baseline_value * pace_multiplier * prediction_weights['pace']
+
+            # Fatigue adjustment (negative impact)
+            fatigue_penalty = baseline_value * fatigue_features['fatigue_score'] * -0.2 * prediction_weights['fatigue']
+
+            # Market sentiment adjustment (small effect)
+            market_adjustment = market_features['odds_consensus'] * 2 * prediction_weights['market']
+
+            # Final prediction
+            predicted_value = (
+                baseline_component +
+                usage_adjustment +
+                matchup_adjustment +
+                advanced_adjustment +
+                pace_adjustment +
+                fatigue_penalty +
+                market_adjustment
+            )
+
+            return max(predicted_value, 0)  # Ensure non-negative
+
+        # Calculate predictions for all stat types
+        predicted_points = calculate_stat_prediction(baseline_points, 'points')
+        predicted_rebounds = calculate_stat_prediction(baseline_rebounds, 'rebounds')
+        predicted_assists = calculate_stat_prediction(baseline_assists, 'assists')
 
         # Calculate confidence score
         confidence_factors = [
@@ -393,7 +645,11 @@ class AdvancedNBAPredictor:
 
         return {
             'baseline_points': baseline_points,
+            'baseline_rebounds': baseline_rebounds,
+            'baseline_assists': baseline_assists,
             'predicted_points': predicted_points,
+            'predicted_rebounds': predicted_rebounds,
+            'predicted_assists': predicted_assists,
             'confidence_score': confidence_score,
             'insights': insights,
             'features': {
@@ -406,11 +662,91 @@ class AdvancedNBAPredictor:
             }
         }
 
+    def calculate_enhanced_prediction(self, player_name, game_context):
+        """
+        Enhanced prediction using XGBoost ensemble and advanced feature engineering.
+        Based on 2024 research findings.
+        """
+        try:
+            # Get player data
+            player_data = self.historical_data[self.historical_data['fullName'] == player_name].copy()
+            if player_data.empty:
+                return None
+
+            # Sort by date for temporal features
+            player_data = player_data.sort_values('gameDate')
+
+            print(f"   🔬 Applying advanced feature engineering for {player_name}")
+
+            # Apply advanced feature engineering
+            player_data = self.feature_engineer.create_lag_features(
+                self.historical_data, player_name, features=['points', 'reboundsTotal', 'assists']
+            )
+            player_data = self.feature_engineer.create_rolling_features(player_data)
+            player_data = self.feature_engineer.create_efficiency_features(player_data)
+            player_data = self.feature_engineer.create_trend_features(player_data)
+
+            # Train XGBoost models if not already trained
+            if not self.models_trained:
+                print(f"   🤖 Training XGBoost ensemble models...")
+                for stat in ['points', 'reboundsTotal', 'assists']:
+                    if stat in player_data.columns:
+                        model = self.ensemble_predictor.train_model(player_data, stat)
+                        if model:
+                            print(f"      ✓ {stat.capitalize()} model trained (R²: {self.ensemble_predictor.models[stat]['train_score']:.3f})")
+                self.models_trained = True
+
+            # Make predictions for each stat
+            predictions = {}
+            confidences = {}
+            shap_analyses = {}
+
+            for stat_type, stat_col in [('points', 'points'), ('rebounds', 'reboundsTotal'), ('assists', 'assists')]:
+                if stat_col in self.ensemble_predictor.models:
+                    pred, conf, shap_vals = self.ensemble_predictor.predict_with_confidence(player_data, stat_col)
+
+                    if pred is not None:
+                        predictions[stat_type] = max(pred, 0)  # Ensure non-negative
+                        confidences[stat_type] = conf
+                        shap_analyses[stat_type] = shap_vals
+                        print(f"      📊 {stat_type.capitalize()}: {pred:.1f} (confidence: {conf:.3f})")
+
+                        # Print top SHAP features if available
+                        if shap_vals and 'error' not in shap_vals:
+                            top_feature = max(shap_vals.items(), key=lambda x: abs(x[1]))
+                            print(f"         🎯 Key factor: {top_feature[0]} (impact: {top_feature[1]:+.2f})")
+
+            # Fallback to original method if XGBoost fails
+            if not predictions:
+                print("   ⚠️ XGBoost predictions failed, falling back to original method")
+                return self.calculate_advanced_prediction(player_name, {}, game_context)
+
+            return {
+                'method': 'xgboost_ensemble',
+                'predicted_points': predictions.get('points', 0),
+                'predicted_rebounds': predictions.get('rebounds', 0),
+                'predicted_assists': predictions.get('assists', 0),
+                'confidence_points': confidences.get('points', 0),
+                'confidence_rebounds': confidences.get('rebounds', 0),
+                'confidence_assists': confidences.get('assists', 0),
+                'shap_analysis': shap_analyses,
+                'features_engineered': True
+            }
+
+        except Exception as e:
+            print(f"   ❌ Enhanced prediction failed: {str(e)}")
+            print("   ⚠️ Falling back to original prediction method")
+            return self.calculate_advanced_prediction(player_name, {}, game_context)
+
     def make_prediction(self, player_name, prop_data, game_context):
         """Make prediction for all markets of a player."""
         try:
-            # Calculate advanced prediction
-            result = self.calculate_advanced_prediction(player_name, prop_data, game_context)
+            # Try enhanced XGBoost prediction first
+            result = self.calculate_enhanced_prediction(player_name, game_context)
+
+            # Fallback to original method if enhanced fails
+            if not result:
+                result = self.calculate_advanced_prediction(player_name, prop_data, game_context)
             if not result:
                 print(f"   ❌ Could not calculate prediction for {player_name}")
                 return None
@@ -425,12 +761,9 @@ class AdvancedNBAPredictor:
                 if market_type.lower() == 'player_points':
                     predicted_value = result['predicted_points']
                 elif market_type.lower() == 'player_rebounds':
-                    # Use regression of rebounds to points
-                    predicted_value = result['baseline_points'] * 0.35 * result['features']['pace']['game_pace_factor']
+                    predicted_value = result['predicted_rebounds']
                 elif market_type.lower() == 'player_assists':
-                    # Use regression of assists to points with usage rate adjustment
-                    usage_factor = result['features']['usage']['current_usage'] / 30 if result['features']['usage']['current_usage'] > 0 else 1
-                    predicted_value = result['baseline_points'] * 0.25 * usage_factor
+                    predicted_value = result['predicted_assists']
                 else:
                     print(f"      ⚠️ Unknown market type: {market_type}")
                     continue
