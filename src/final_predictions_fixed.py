@@ -198,6 +198,7 @@ class FixedNBAPredictionsSystem:
             # Get baseline from historical data
             player_data = self.historical_data[self.historical_data['fullName'] == player_name]
             if player_data.empty:
+                print(f"   ❌ No historical data found for {player_name}")
                 return None
 
             baseline_points = player_data['points'].tail(10).mean()
@@ -225,8 +226,11 @@ class FixedNBAPredictionsSystem:
                 else:
                     continue  # Skip unknown market types
 
-                # Find best odds for this market
-                best_prop = prop_data.sort_values('over_odds', key=lambda x: float(x) if x.replace('.', '', 1).isdigit() else 0, ascending=False).iloc[0]
+                # Find best odds for this market (convert list to DataFrame first)
+                prop_df = pd.DataFrame(prop_data)
+                # Convert over_odds to numeric for sorting
+                prop_df['over_odds_numeric'] = pd.to_numeric(prop_df['over_odds'], errors='coerce')
+                best_prop = prop_df.loc[prop_df['over_odds_numeric'].idxmax()].to_dict()
 
                 recommendation = "OVER" if predicted_value > best_prop['prop_line'] else "UNDER"
 
@@ -243,6 +247,7 @@ class FixedNBAPredictionsSystem:
                 }
 
             if not predictions:
+                print(f"   ❌ No valid predictions generated for {player_name}")
                 return None
 
             # Return combined prediction
@@ -258,7 +263,9 @@ class FixedNBAPredictionsSystem:
             }
 
         except Exception as e:
-            print(f"❌ Error in prediction for {player_name}: {e}")
+            print(f"   ❌ Error in prediction for {player_name}: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def _get_confidence_level(self, confidence):

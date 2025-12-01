@@ -202,7 +202,8 @@ class NBAOddsClient:
                 prop.update({
                     'home_team': game['home_team'],
                     'away_team': game['away_team'],
-                    'game_time': game['game_time']
+                    'game_time': game['game_time'],
+                    'gameDate': game['game_time'].date()  # Add gameDate field
                 })
 
             all_props.extend(props)
