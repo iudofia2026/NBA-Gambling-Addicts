@@ -1,264 +1,229 @@
 """
-Updated Pytest Configuration and Shared Fixtures
-===============================================
-
-Global pytest configuration and reusable fixtures for all tests.
-Optimized for the production system: final_predictions_optimized.py
+Pytest configuration and fixtures for NBA Betting Model tests
 """
 
 import pytest
-import pandas as pd
 import numpy as np
-import os
-import sys
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch
+import pandas as pd
+from unittest.mock import Mock, MagicMock
 import tempfile
-import shutil
-import joblib
+import os
+from datetime import datetime, timedelta
 
 # Add src to path for imports
+import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-# Import optimized system for testing
-from final_predictions_optimized import OptimizedNBAPredictionsSystem
 
-# Import mock utilities
-from tests.fixtures.mock_optimized_responses import (
-    MockAPIResponses,
-    create_mock_odds_client,
-    create_mock_models
-)
-
-
-# ========================================
-# SESSION FIXTURES (Setup once per test session)
-# ========================================
-
-@pytest.fixture(scope="session")
-def test_data_dir():
-    """Create temporary directory for test data."""
-    temp_dir = tempfile.mkdtemp(prefix="nba_optimized_test_")
-    yield temp_dir
-    # Cleanup after all tests
-    shutil.rmtree(temp_dir, ignore_errors=True)
-
-
-@pytest.fixture(scope="session")
-def mock_api_key():
-    """Mock API key for testing."""
-    return "test_optimized_api_key_12345"
-
-
-@pytest.fixture(scope="session")
-def sample_optimized_player_data():
-    """Generate sample player data optimized for the production system."""
+@pytest.fixture
+def sample_nba_data():
+    """Generate sample NBA data for testing"""
+    dates = pd.date_range('2024-01-01', periods=100)
     np.random.seed(42)
 
-    players = ['LeBron James', 'Stephen Curry', 'Kevin Durant', 'Anthony Davis']
-    teams = ['LAL', 'GSW', 'PHX', 'BOS']
-    opponents = ['GSW', 'LAL', 'PHX', 'BOS', 'MIA', 'NYK']
-
-    dates = pd.date_range(start='2023-01-01', end='2023-12-31', freq='2D')
-
-    data = []
-    for player in players:
-        for date in dates[:60]:  # 60 games per player for better analysis
-            # Base stats with realistic variance
-            base_points = {'LeBron James': 27, 'Stephen Curry': 29, 'Kevin Durant': 26, 'Anthony Davis': 24}[player]
-            points = max(10, base_points + np.random.randint(-8, 8))
-
-            base_minutes = {'LeBron James': 35, 'Stephen Curry': 34, 'Kevin Durant': 36, 'Anthony Davis': 33}[player]
-            minutes = max(20, base_minutes + np.random.randint(-5, 5))
-
-            # Realistic stat relationships
-            field_goals_made = max(5, int(points * 0.45 + np.random.randint(-2, 2)))
-            field_goals_attempted = max(field_goals_made + 5, int(points * 0.85 + np.random.randint(-3, 3)))
-
-            data.append({
-                'gameDate': date,
-                'fullName': player,
-                'playerteamName': np.random.choice(teams),
-                'opponentteamName': np.random.choice(opponents),
-                'points': points,
-                'assists': max(1, int(points * 0.25 + np.random.randint(-3, 3))),
-                'reboundsTotal': max(1, int(points * 0.35 + np.random.randint(-3, 3))),
-                'numMinutes': minutes,
-                'fieldGoalsMade': field_goals_made,
-                'fieldGoalsAttempted': field_goals_attempted,
-                'threePointersMade': max(0, int(points * 0.15 + np.random.randint(-2, 2))),
-                'threePointersAttempted': max(2, int(points * 0.35 + np.random.randint(-2, 2))),
-                'freeThrowsMade': max(0, int(points * 0.20 + np.random.randint(-2, 2))),
-                'freeThrowsAttempted': max(1, int(points * 0.25 + np.random.randint(-2, 2))),
-                'steals': max(0, np.random.randint(0, 4)),
-                'blocks': max(0, np.random.randint(0, 3)),
-                'turnovers': max(1, np.random.randint(1, 6)),
-                'age': {'LeBron James': 38, 'Stephen Curry': 35, 'Kevin Durant': 34, 'Anthony Davis': 30}[player],
-                # Add target variables
-                'over_threshold': 1 if points > 25 else 0,
-                'player_threshold': 25  # Simplified threshold
-            })
-
-    return pd.DataFrame(data)
-
-
-@pytest.fixture(scope="session")
-def sample_engineered_features(sample_optimized_player_data):
-    """Generate sample feature-engineered data with optimized features."""
-    df = sample_optimized_player_data.copy()
-
-    # Sort for proper rolling calculations
-    df = df.sort_values(['fullName', 'gameDate'])
-    df['gameDate'] = pd.to_datetime(df['gameDate'])
-
-    # Add core rolling features
-    df['rolling_3g_points'] = df.groupby('fullName')['points'].transform(
-        lambda x: x.rolling(3, min_periods=1).mean().shift(1)
-    ).fillna(0)
-
-    df['rolling_5g_points'] = df.groupby('fullName')['points'].transform(
-        lambda x: x.rolling(5, min_periods=1).mean().shift(1)
-    ).fillna(0)
-
-    df['rolling_3g_assists'] = df.groupby('fullName')['assists'].transform(
-        lambda x: x.rolling(3, min_periods=1).mean().shift(1)
-    ).fillna(0)
-
-    df['rolling_3g_rebounds'] = df.groupby('fullName')['reboundsTotal'].transform(
-        lambda x: x.rolling(3, min_periods=1).mean().shift(1)
-    ).fillna(0)
-
-    # Add efficiency features
-    df['points_per_minute'] = (df['points'] / df['numMinutes']).fillna(0)
-    df['usage_rate'] = (df['fieldGoalsAttempted'] + 0.44 * df['freeThrowsAttempted']) / df['numMinutes']
-    df['efficiency'] = df['points'] / (df['fieldGoalsAttempted'] * 2 + df['freeThrowsAttempted'])
-
-    # Add opponent strength (mock ratings)
-    opponent_ratings = {'LAL': 115.2, 'GSW': 114.8, 'PHX': 116.1, 'BOS': 117.3, 'MIA': 112.9, 'NYK': 113.5}
-    df['opp_defensive_rating'] = df['opponentteamName'].map(opponent_ratings).fillna(114.0)
-
-    # Add situational features
-    df['days_rest'] = df.groupby('fullName')['gameDate'].transform(
-        lambda x: x.diff().dt.days.fillna(3)
-    ).fillna(3)
-
-    df['home_advantage'] = (df['playerteamName'].isin(['LAL', 'GSW', 'PHX', 'BOS'])).astype(int)
-
-    # Add performance consistency
-    df['points_std_3g'] = df.groupby('fullName')['points'].transform(
-        lambda x: x.rolling(3, min_periods=1).std().shift(1)
-    ).fillna(df['points'].std())
-
-    return df
-
-
-# ========================================
-# FUNCTION FIXTURES (Setup per test function)
-# ========================================
-
-@pytest.fixture
-def mock_env_with_api_key(monkeypatch, mock_api_key):
-    """Set up environment with API key."""
-    monkeypatch.setenv('ODDS_API_KEY', mock_api_key)
-    yield mock_api_key
-    monkeypatch.delenv('ODDS_API_KEY', raising=False)
-
-
-@pytest.fixture
-def mock_env_without_api_key(monkeypatch):
-    """Set up environment without API key."""
-    monkeypatch.delenv('ODDS_API_KEY', raising=False)
-
-
-@pytest.fixture
-def temp_model_dir(test_data_dir):
-    """Create temporary directory for model files."""
-    model_dir = os.path.join(test_data_dir, 'models')
-    os.makedirs(model_dir, exist_ok=True)
-
-    # Create mock model files
-    models = create_mock_models()
-    for model_name, model in models.items():
-        model_path = os.path.join(model_dir, f'{model_name}_model.pkl')
-        joblib.dump(model, model_path)
-
-    return model_dir
-
-
-@pytest.fixture
-def temp_data_dir(test_data_dir):
-    """Create temporary directory for data files."""
-    data_dir = os.path.join(test_data_dir, 'data', 'processed')
-    os.makedirs(data_dir, exist_ok=True)
-    return data_dir
-
-
-@pytest.fixture
-def sample_prediction_input():
-    """Sample input data for predictions."""
     return pd.DataFrame({
-        'fullName': ['LeBron James', 'Stephen Curry', 'Kevin Durant'],
-        'gameDate': [datetime.now() + timedelta(hours=3)] * 3,
-        'home_team': ['Los Angeles Lakers', 'Golden State Warriors', 'Phoenix Suns'],
-        'away_team': ['Golden State Warriors', 'Phoenix Suns', 'Los Angeles Lakers'],
-        'prop_line': [25.5, 28.5, 27.0],
-        'market_type': ['points', 'points', 'rebounds'],
-        'over_odds': [-110, -115, -105],
-        'bookmaker': ['DraftKings', 'FanDuel', 'DraftKings'],
-        'game_time': [datetime.now() + timedelta(hours=3)] * 3,
-        'playerteamName': ['LAL', 'GSW', 'PHX'],
-        'opponentteamName': ['GSW', 'PHX', 'LAL']
+        'date': dates,
+        'player_id': np.random.randint(1, 50, 100),
+        'player_name': [f'Player_{i}' for i in np.random.randint(1, 50, 100)],
+        'team': [f'Team_{i}' for i in np.random.randint(1, 30, 100)],
+        'opponent': [f'Team_{i}' for i in np.random.randint(1, 30, 100)],
+        'home_game': np.random.choice([True, False], 100),
+        'points': np.random.normal(20, 5, 100).clip(0, 50),
+        'rebounds': np.random.normal(8, 2, 100).clip(0, 20),
+        'assists': np.random.normal(5, 2, 100).clip(0, 15),
+        'minutes': np.random.normal(30, 5, 100).clip(10, 48),
+        'efficiency': np.random.normal(25, 5, 100).clip(0, 50),
+        'prop_line': np.random.uniform(15, 25, 100),
+        'odds_over': np.random.uniform(1.8, 2.2, 100),
+        'odds_under': np.random.uniform(1.8, 2.2, 100)
     })
 
 
 @pytest.fixture
-def mock_trained_models():
-    """Mock trained ML models for testing."""
-    return create_mock_models()
+def sample_model_data(sample_nba_data):
+    """Generate data ready for model training"""
+    data = sample_nba_data.copy()
 
+    # Create target variable
+    data['target'] = (data['points'] > data['prop_line']).astype(int)
 
-# ========================================
-# MOCK ENVIRONMENT FIXTURES
-# ========================================
+    # Create features
+    data['points_per_minute'] = data['points'] / data['minutes']
+    data['efficiency_rating'] = data['efficiency'] / data['minutes']
+    data['total_impact'] = data['points'] + data['rebounds'] + data['assists']
 
-@pytest.fixture
-def mock_odds_client():
-    """Mock odds API client with realistic responses."""
-    return create_mock_odds_client()
+    # Add rolling features (simplified)
+    data = data.sort_values(['player_id', 'date'])
+    data['points_3avg'] = data.groupby('player_id')['points'].rolling(3).mean().reset_index(0, drop=True)
+    data['rebounds_3avg'] = data.groupby('player_id')['rebounds'].rolling(3).mean().reset_index(0, drop=True)
 
-
-@pytest.fixture
-def mock_optimized_system(mock_api_key, sample_engineered_features):
-    """Create a mock optimized predictions system."""
-    with patch('final_predictions_optimized.NBAOddsClient') as mock_client:
-        system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
-        system.historical_data = sample_engineered_features
-        yield system
+    return data.dropna()
 
 
 @pytest.fixture
-def optimized_system_with_models(mock_api_key, sample_engineered_features, temp_model_dir):
-    """Create optimized system with loaded models."""
-    original_cwd = os.getcwd()
-    try:
-        # Change to directory structure expected by the system
-        os.chdir(temp_model_dir.replace('/models', ''))
+def mock_model():
+    """Create a mock trained model"""
+    model = Mock()
 
-        with patch('final_predictions_optimized.NBAOddsClient') as mock_client:
-            system = OptimizedNBAPredictionsSystem(api_key=mock_api_key)
-            system.load_models()
-            yield system
+    # Mock predictions
+    model.predict.return_value = np.random.choice([0, 1], 50)
+    model.predict_proba.return_value = np.random.dirichlet([1, 1], 50)
 
-    finally:
-        os.chdir(original_cwd)
+    # Mock feature importances
+    model.feature_importances_ = np.random.rand(10)
+
+    return model
 
 
-# ========================================
-# PERFORMANCE MARKERS
-# ========================================
+@pytest.fixture
+def mock_odds_api_response():
+    """Mock API response for odds data"""
+    return {
+        'success': True,
+        'data': [
+            {
+                'player_id': 1,
+                'player_name': 'LeBron James',
+                'team': 'Lakers',
+                'opponent': 'Celtics',
+                'prop_type': 'points',
+                'line': 25.5,
+                'over_odds': 1.90,
+                'under_odds': 1.90,
+                'date': '2024-01-15'
+            },
+            {
+                'player_id': 2,
+                'player_name': 'Kevin Durant',
+                'team': 'Suns',
+                'opponent': 'Warriors',
+                'prop_type': 'points',
+                'line': 28.5,
+                'over_odds': 1.85,
+                'under_odds': 1.95,
+                'date': '2024-01-15'
+            },
+            {
+                'player_id': 3,
+                'player_name': 'Stephen Curry',
+                'team': 'Warriors',
+                'opponent': 'Suns',
+                'prop_type': 'points',
+                'line': 24.5,
+                'over_odds': 1.95,
+                'under_odds': 1.85,
+                'date': '2024-01-15'
+            }
+        ]
+    }
 
+
+@pytest.fixture
+def temp_data_dir():
+    """Create temporary directory for test data"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield tmpdir
+
+
+@pytest.fixture
+def sample_csv_data(sample_nba_data, temp_data_dir):
+    """Create sample CSV files for testing"""
+    csv_path = os.path.join(temp_data_dir, 'nba_data.csv')
+    sample_nba_data.to_csv(csv_path, index=False)
+    return csv_path
+
+
+@pytest.fixture
+def mock_api_client():
+    """Create mock API client"""
+    client = Mock()
+    client.get_odds.return_value = mock_odds_api_response()
+    client.validate_api_key.return_value = True
+    client.check_rate_limit.return_value = True
+    return client
+
+
+@pytest.fixture
+def validation_data():
+    """Create data specifically for validation testing"""
+    # Create data with intentional issues
+    dates = pd.date_range('2024-01-01', periods=200)
+    np.random.seed(123)
+
+    data = pd.DataFrame({
+        'date': dates,
+        'player_id': np.random.randint(1, 30, 200),
+        'points': np.random.normal(20, 5, 200),
+        'rebounds': np.random.normal(8, 2, 200),
+        'assists': np.random.normal(5, 2, 200),
+        'minutes': np.random.normal(30, 5, 200),
+        'prop_line': np.random.uniform(18, 22, 200),
+        # Add potential leakage features
+        'over_threshold': np.random.choice([0, 1], 200),
+        'current_game_points': np.random.normal(20, 5, 200),
+        'target_score': np.random.normal(20, 5, 200)
+    })
+
+    # Create target
+    data['target'] = (data['points'] > data['prop_line']).astype(int)
+
+    return data
+
+
+@pytest.fixture
+def performance_test_data():
+    """Create large dataset for performance testing"""
+    dates = pd.date_range('2024-01-01', periods=10000)
+    np.random.seed(456)
+
+    return pd.DataFrame({
+        'date': dates,
+        'player_id': np.random.randint(1, 500, 10000),
+        'points': np.random.normal(20, 5, 10000),
+        'rebounds': np.random.normal(8, 2, 10000),
+        'assists': np.random.normal(5, 2, 10000),
+        'minutes': np.random.normal(30, 5, 10000),
+        'efficiency': np.random.normal(25, 5, 10000),
+        'prop_line': np.random.uniform(18, 22, 10000)
+    })
+
+
+@pytest.fixture
+def corrupted_data():
+    """Create data with quality issues for testing error handling"""
+    dates = pd.date_range('2024-01-01', periods=50)
+
+    data = pd.DataFrame({
+        'date': dates,
+        'player_id': [1, 2, 3, None, 5] * 10,  # Missing player_id
+        'points': [20, np.inf, -np.inf, 25, None] * 10,  # Infinite and null values
+        'rebounds': [8, None, 10, None, 7] * 10,
+        'assists': [5, 3, None, 4, 2] * 10,
+        'minutes': [35, None, 0, 40, 30] * 10,
+        'prop_line': [20.5, 19.5, None, 21.5, 18.5] * 10
+    })
+
+    return data
+
+
+@pytest.fixture(scope="session")
+def test_config():
+    """Test configuration settings"""
+    return {
+        'random_state': 42,
+        'test_size': 0.2,
+        'cv_folds': 5,
+        'confidence_threshold': 0.7,
+        'max_features': 50,
+        'min_samples_leaf': 5,
+        'timeout_seconds': 30,
+        'memory_limit_mb': 100
+    }
+
+
+# Custom pytest markers
 def pytest_configure(config):
-    """Register custom markers."""
+    """Configure custom markers"""
     config.addinivalue_line(
         "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
     )
@@ -269,132 +234,72 @@ def pytest_configure(config):
         "markers", "unit: marks tests as unit tests"
     )
     config.addinivalue_line(
-        "markers", "api: marks tests that require API mocking"
-    )
-    config.addinivalue_line(
-        "markers", "performance: marks tests that measure performance"
-    )
-    config.addinivalue_line(
-        "markers", "validation: marks tests for data validation"
+        "markers", "performance: marks tests as performance tests"
     )
 
 
-# ========================================
-# PYTEST HOOKS
-# ========================================
-
-def pytest_collection_modifyitems(config, items):
-    """Modify test collection to add markers automatically."""
-    for item in items:
-        # Add unit marker to tests in unit/ directory
-        if "unit" in str(item.fspath):
-            item.add_marker(pytest.mark.unit)
-
-        # Add integration marker to tests in integration/ directory
-        elif "integration" in str(item.fspath):
-            item.add_marker(pytest.mark.integration)
-
-        # Add validation marker to tests in validation/ directory
-        elif "validation" in str(item.fspath):
-            item.add_marker(pytest.mark.validation)
-
-        # Mark slow tests that take >2 seconds
-        if "slow" in item.nodeid.lower() or "performance" in item.nodeid.lower():
-            item.add_marker(pytest.mark.slow)
-
-        # Mark API tests
-        if "api" in item.nodeid.lower() or "odds" in item.nodeid.lower():
-            item.add_marker(pytest.mark.api)
-
-
-# ========================================
-# CUSTOM HELPERS
-# ========================================
-
-@pytest.fixture
-def assert_optimized_prediction_structure():
-    """Helper to assert prediction structure is correct."""
-    def _assert_structure(prediction):
-        required_fields = [
-            'player_name', 'market_type', 'prop_line', 'recommendation',
-            'confidence', 'over_odds', 'bookmaker', 'optimized_insights'
-        ]
-
-        for field in required_fields:
-            assert field in prediction, f"Missing required field: {field}"
-
-        # Validate data types and ranges
-        assert isinstance(prediction['confidence'], (int, float))
-        assert 0 <= prediction['confidence'] <= 1
-        assert prediction['recommendation'] in ['OVER', 'UNDER']
-
-        # Validate optimized insights
-        insights = prediction['optimized_insights']
-        insight_fields = [
-            'predicted_value', 'line_diff', 'confidence_level',
-            'form', 'matchup_quality', 'team_chemistry', 'adjustment'
-        ]
-
-        for field in insight_fields:
-            assert field in insights, f"Missing insight field: {field}"
-
-    return _assert_structure
-
-
-@pytest.fixture
-def create_temp_csv_file():
-    """Helper to create temporary CSV files."""
-    def _create_csv(data, filename, directory=None):
-        if directory is None:
-            directory = tempfile.mkdtemp()
-
-        filepath = os.path.join(directory, filename)
-        if isinstance(data, pd.DataFrame):
-            data.to_csv(filepath, index=False)
-        else:
-            pd.DataFrame(data).to_csv(filepath, index=False)
-
-        return filepath
-
-    return _create_csv
-
-
-# ========================================
-# MOCK RESPONSES FOR TESTING
-# ========================================
-
-@pytest.fixture
-def mock_odds_responses():
-    """Provide access to mock API responses."""
-    return MockAPIResponses.ODDS_API
-
-
-@pytest.fixture
-def mock_model_responses():
-    """Provide access to mock model responses."""
-    return MockAPIResponses.MODEL
-
-
-@pytest.fixture
-def mock_prediction_results():
-    """Provide access to mock prediction results."""
-    return MockAPIResponses.PREDICTIONS
-
-
-# ========================================
-# CLEANUP HELPERS
-# ========================================
-
+# Pytest hooks
 @pytest.fixture(autouse=True)
-def cleanup_temp_files():
-    """Automatically clean up temporary files after tests."""
-    temp_files = []
-    yield
+def setup_test_environment(monkeypatch):
+    """Setup common test environment variables"""
+    monkeypatch.setenv("TEST_MODE", "true")
+    monkeypatch.setenv("ODDS_API_KEY", "test_key_12345")
+    monkeypatch.setenv("PYTHONPATH", os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-    # Clean up any created temp files
-    for filepath in temp_files:
-        try:
-            if os.path.exists(filepath):
-                os.remove(filepath)
-        except Exception:
-            pass  # Ignore cleanup errors
+
+@pytest.fixture
+def mock_redis():
+    """Mock Redis client for caching tests"""
+    redis_mock = Mock()
+    redis_mock.get.return_value = None
+    redis_mock.set.return_value = True
+    redis_mock.exists.return_value = False
+    return redis_mock
+
+
+@pytest.fixture
+def sample_ensemble_models():
+    """Create sample ensemble of models"""
+    models = []
+    for i in range(3):
+        model = Mock()
+        model.predict.return_value = np.random.choice([0, 1], 50)
+        model.predict_proba.return_value = np.random.dirichlet([1, 1], 50)
+        model.feature_importances_ = np.random.rand(10)
+        models.append(model)
+
+    return models
+
+
+# Helper functions for tests
+def create_time_series_data(days=30, players=10):
+    """Helper to create time series data"""
+    dates = pd.date_range('2024-01-01', periods=days)
+    data = []
+
+    for player_id in range(1, players + 1):
+        for date in dates:
+            data.append({
+                'date': date,
+                'player_id': player_id,
+                'points': np.random.normal(20, 5),
+                'rebounds': np.random.normal(8, 2),
+                'assists': np.random.normal(5, 2),
+                'minutes': np.random.normal(30, 5)
+            })
+
+    return pd.DataFrame(data)
+
+
+def assert_dataframe_valid(df, required_columns=None, min_rows=1):
+    """Helper to validate DataFrame in tests"""
+    assert isinstance(df, pd.DataFrame), "Expected pandas DataFrame"
+    assert len(df) >= min_rows, f"DataFrame has fewer than {min_rows} rows"
+
+    if required_columns:
+        missing_cols = set(required_columns) - set(df.columns)
+        assert not missing_cols, f"Missing required columns: {missing_cols}"
+
+    # Check for extreme null values
+    null_ratio = df.isnull().sum().sum() / (len(df) * len(df.columns))
+    assert null_ratio < 0.5, "DataFrame has too many null values"
