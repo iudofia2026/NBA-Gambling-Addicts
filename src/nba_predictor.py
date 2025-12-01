@@ -948,21 +948,21 @@ class AdvancedNBAPredictor:
         form_factor = (last_3_starters - recent_avg) / recent_avg if recent_avg > 0 else 0
         form_adjustment = baseline * form_factor * 0.1  # Max 10% adjustment
 
-        # 2. Line-aware calibration (key insight!)
-        # If our prediction is way off the line, adjust it towards the line
+        # 2. Minimal line adjustment (trust the data more)
+        # Only make small adjustments for extreme cases
         line_distance = abs(baseline - prop_line)
-        max_reasonable_distance = prop_line * 0.3  # Max 30% away from line
+        max_reasonable_distance = prop_line * 0.4  # Allow 40% deviation
 
         if line_distance > max_reasonable_distance:
-            # Pull prediction towards line to be more realistic
+            # Make smaller adjustments - trust our data
             direction = 1 if baseline < prop_line else -1
-            calibration = direction * (line_distance - max_reasonable_distance) * 0.5
+            calibration = direction * (line_distance - max_reasonable_distance) * 0.2  # Reduced from 0.5
             line_adjustment = calibration
         else:
             line_adjustment = 0
 
-        # 3. Small random variance for realism
-        variance = np.random.normal(0, baseline * 0.05)  # 5% variance
+        # 3. Minimal variance (reduce noise)
+        variance = np.random.normal(0, baseline * 0.02)  # Reduced from 5% to 2%
 
         # Final prediction
         prediction = baseline + form_adjustment + line_adjustment + variance
