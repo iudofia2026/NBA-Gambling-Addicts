@@ -923,6 +923,24 @@ class AdvancedNBAPredictor:
         # Baseline prediction: 70% recent, 30% season
         baseline = (recent_avg * 0.7) + (season_avg * 0.3)
 
+        # ELITE PLAYER BOOST: For known superstars, add peak performance factor
+        elite_players = {
+            'Nikola Jokic': {'points': 26, 'rebounds': 14, 'assists': 9},  # Boosted rebounds
+            'Kevin Durant': {'points': 30, 'rebounds': 6, 'assists': 4},   # Boosted points
+            'James Harden': {'points': 22, 'rebounds': 6, 'assists': 8},
+            'Devin Booker': {'points': 24, 'rebounds': 4, 'assists': 7},
+            'LeBron James': {'points': 25, 'rebounds': 7, 'assists': 8},
+            'Stephen Curry': {'points': 27, 'rebounds': 4, 'assists': 6},
+            'Jayson Tatum': {'points': 27, 'rebounds': 7, 'assists': 4}
+        }
+
+        if player_name in elite_players:
+            elite_baseline = elite_players[player_name].get(stat_type, baseline)
+            # If our calculated baseline is significantly below known elite performance, boost it
+            if baseline < elite_baseline * 0.75:  # If 25% below elite level
+                print(f"      🌟 Elite player boost for {player_name}: {baseline:.1f} → {elite_baseline * 0.9:.1f}")
+                baseline = elite_baseline * 0.9  # Use 90% of elite performance
+
         # REALISTIC ADJUSTMENTS (small, sensible)
 
         # 1. Form adjustment (hot/cold) - using starter games only
@@ -930,21 +948,21 @@ class AdvancedNBAPredictor:
         form_factor = (last_3_starters - recent_avg) / recent_avg if recent_avg > 0 else 0
         form_adjustment = baseline * form_factor * 0.1  # Max 10% adjustment
 
-        # 2. Line-aware calibration (key insight!)
-        # If our prediction is way off the line, adjust it towards the line
+        # 2. Minimal line adjustment (trust the data more)
+        # Only make small adjustments for extreme cases
         line_distance = abs(baseline - prop_line)
-        max_reasonable_distance = prop_line * 0.3  # Max 30% away from line
+        max_reasonable_distance = prop_line * 0.4  # Allow 40% deviation
 
         if line_distance > max_reasonable_distance:
-            # Pull prediction towards line to be more realistic
+            # Make smaller adjustments - trust our data
             direction = 1 if baseline < prop_line else -1
-            calibration = direction * (line_distance - max_reasonable_distance) * 0.5
+            calibration = direction * (line_distance - max_reasonable_distance) * 0.2  # Reduced from 0.5
             line_adjustment = calibration
         else:
             line_adjustment = 0
 
-        # 3. Small random variance for realism
-        variance = np.random.normal(0, baseline * 0.05)  # 5% variance
+        # 3. Minimal variance (reduce noise)
+        variance = np.random.normal(0, baseline * 0.02)  # Reduced from 5% to 2%
 
         # Final prediction
         prediction = baseline + form_adjustment + line_adjustment + variance
@@ -1216,11 +1234,11 @@ class AdvancedNBAPredictor:
                     'over_odds': data['over_odds'],
                     'bookmaker': data['bookmaker'],
                     'game_time': data['game_time'],
-                    'usage_trend': pred.get('advanced_insights', {}).get('usage_trend', 'N/A'),
-                    'matchup_rating': pred.get('advanced_insights', {}).get('matchup_rating', 'N/A'),
-                    'fatigue_level': pred.get('advanced_insights', {}).get('fatigue_level', 'N/A'),
-                    'hot_cold': pred.get('advanced_insights', {}).get('hot_cold', 'N/A'),
-                    'pace_impact': pred.get('advanced_insights', {}).get('pace_impact', 'N/A')
+                    'usage_trend': data.get('usage_trend', 'N/A'),
+                    'matchup_rating': data.get('matchup_rating', 'N/A'),
+                    'fatigue_level': data.get('fatigue_level', 'N/A'),
+                    'hot_cold': data.get('hot_cold', 'N/A'),
+                    'pace_impact': data.get('pace_impact', 'N/A')
                 })
 
         pd.DataFrame(flattened_predictions).to_csv(output_file, index=False)
