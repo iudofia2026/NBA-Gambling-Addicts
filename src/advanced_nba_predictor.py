@@ -583,14 +583,51 @@ class AdvancedNBAPredictor:
     def calculate_advanced_prediction(self, player_name, prop_data, game_context):
         """Calculate advanced prediction using all features."""
 
-        # Get baseline for all stat types
+        # Get REALISTIC baseline using STARTER minutes only
         player_data = self.historical_data[self.historical_data['fullName'] == player_name]
         if player_data.empty:
             return None
 
-        baseline_points = player_data['points'].tail(10).mean()
-        baseline_rebounds = player_data['reboundsTotal'].tail(10).mean()
-        baseline_assists = player_data['assists'].tail(10).mean()
+        # CRITICAL FIX: Filter to STARTER-level minutes only (25+ minutes)
+        # This eliminates bench/limited minutes that skew predictions low
+        starter_data = player_data[player_data['numMinutes'] >= 25.0]
+
+        print(f"   📊 Data quality for {player_name}:")
+        print(f"      Total games: {len(player_data)}, Starter games (25+ min): {len(starter_data)}")
+
+        if len(starter_data) < 5:
+            # Fallback to games with 20+ minutes
+            starter_data = player_data[player_data['numMinutes'] >= 20.0]
+            print(f"      Using 20+ minute games: {len(starter_data)}")
+
+        if len(starter_data) < 3:
+            # Use all data as last resort
+            starter_data = player_data
+            print(f"      Using all games: {len(starter_data)}")
+
+        # Calculate REALISTIC per-36-minute projections
+        recent_data = starter_data.tail(15)
+
+        if len(recent_data) == 0:
+            return None
+
+        # Calculate per-minute stats and project to full game
+        avg_minutes = recent_data['numMinutes'].mean()
+
+        # Per-minute calculations
+        points_per_min = recent_data['points'].sum() / recent_data['numMinutes'].sum()
+        rebounds_per_min = recent_data['reboundsTotal'].sum() / recent_data['numMinutes'].sum()
+        assists_per_min = recent_data['assists'].sum() / recent_data['numMinutes'].sum()
+
+        # Project to typical starter minutes (32-36 minutes)
+        typical_minutes = max(32, min(avg_minutes, 36))  # Between 32-36 minutes
+
+        baseline_points = points_per_min * typical_minutes
+        baseline_rebounds = rebounds_per_min * typical_minutes
+        baseline_assists = assists_per_min * typical_minutes
+
+        print(f"      Per-minute rates: {points_per_min:.3f} pts, {rebounds_per_min:.3f} reb, {assists_per_min:.3f} ast")
+        print(f"      Projected to {typical_minutes:.0f} min: {baseline_points:.1f} pts, {baseline_rebounds:.1f} reb, {baseline_assists:.1f} ast")
 
         # Calculate all feature sets
         usage_features = self.calculate_usage_rate_features(player_name)
@@ -667,6 +704,20 @@ class AdvancedNBAPredictor:
                 fatigue_penalty +
                 market_adjustment
             )
+
+            # REALITY CHECK: Ensure predictions are reasonable relative to typical NBA performance
+            if stat_type == 'points':
+                # Elite players: 25-35 pts, Good players: 15-25 pts, Role players: 8-15 pts
+                predicted_value = min(predicted_value, baseline_value * 1.5)  # Max 50% above baseline
+                predicted_value = max(predicted_value, baseline_value * 0.3)  # Min 30% of baseline
+            elif stat_type == 'rebounds':
+                # Centers: 8-15 reb, Forwards: 4-10 reb, Guards: 2-6 reb
+                predicted_value = min(predicted_value, baseline_value * 1.4)  # Max 40% above baseline
+                predicted_value = max(predicted_value, baseline_value * 0.4)  # Min 40% of baseline
+            elif stat_type == 'assists':
+                # PGs: 6-12 ast, Wings: 2-7 ast, Centers: 2-8 ast
+                predicted_value = min(predicted_value, baseline_value * 1.6)  # Max 60% above baseline (assists more volatile)
+                predicted_value = max(predicted_value, baseline_value * 0.2)  # Min 20% of baseline
 
             return max(predicted_value, 0)  # Ensure non-negative
 
