@@ -70,7 +70,7 @@ python src/final_ml_models.py
 
 ```bash
 source venv/bin/activate
-python src/daily_predictions.py
+python src/final_predictions_optimized.py
 ```
 
 - Loads serialized models and feature definitions from `models/`.
@@ -83,7 +83,7 @@ python src/daily_predictions.py
 
 ```bash
 source venv/bin/activate
-python src/final_predictions_system.py
+python src/final_predictions_optimized.py
 ```
 
 - Uses the same historical dataset and models but adds:

@@ -17,7 +17,7 @@ import joblib
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
 
-from daily_predictions import DailyPredictor
+from final_predictions_optimized import OptimizedNBAPredictionsSystem as DailyPredictor
 
 
 class TestDailyPredictorInitialization:
@@ -25,7 +25,7 @@ class TestDailyPredictorInitialization:
 
     def test_init_with_api_key(self, mock_api_key):
         """Test initialization with explicit API key."""
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
 
             assert predictor.api_key == mock_api_key
@@ -34,7 +34,7 @@ class TestDailyPredictorInitialization:
 
     def test_init_with_env_var(self, mock_env_with_api_key):
         """Test initialization using environment variable."""
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor()
 
             assert predictor.api_key == mock_env_with_api_key
@@ -69,7 +69,7 @@ class TestLoadModels:
 
         mock_joblib_load.side_effect = joblib_side_effect
 
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
             predictor.load_models()
 
@@ -88,7 +88,7 @@ class TestLoadModels:
         mock_exists.side_effect = exists_side_effect
         mock_joblib_load.return_value = MagicMock()
 
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
 
             with pytest.raises(FileNotFoundError):
@@ -105,7 +105,7 @@ class TestLoadModels:
         mock_exists.side_effect = exists_side_effect
         mock_joblib_load.return_value = ['feature1', 'feature2']
 
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
 
             with pytest.raises(ValueError, match="No models loaded"):
@@ -121,7 +121,7 @@ class TestHistoricalDataLoading:
         """Test successful historical data loading."""
         mock_read_csv.return_value = sample_features_data
 
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
             data = predictor.get_historical_player_data()
 
@@ -134,7 +134,7 @@ class TestHistoricalDataLoading:
         """Test error handling when data file missing."""
         mock_read_csv.side_effect = FileNotFoundError("File not found")
 
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
 
             with pytest.raises(FileNotFoundError):
@@ -146,7 +146,7 @@ class TestGenerateGameContextFeatures:
 
     def test_generate_features_success(self, mock_api_key, sample_features_data):
         """Test successful feature generation."""
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
 
             player_name = sample_features_data['fullName'].iloc[0]
@@ -165,7 +165,7 @@ class TestGenerateGameContextFeatures:
 
     def test_generate_features_unknown_player(self, mock_api_key, sample_features_data):
         """Test handling of unknown player."""
-        with patch('daily_predictions.NBAOddsClient'):
+        with patch('final_predictions_optimized.NBAOddsClient'):
             predictor = DailyPredictor(api_key=mock_api_key)
 
             features = predictor.generate_game_context_features(
@@ -182,7 +182,7 @@ class TestGenerateGameContextFeatures:
 class TestMakePrediction:
     """Test prediction generation."""
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_make_prediction_success(self, mock_client, mock_api_key,
                                     sample_features_data, mock_trained_model):
         """Test successful prediction generation."""
@@ -219,7 +219,7 @@ class TestMakePrediction:
         assert prediction['recommendation'] in ['OVER', 'UNDER']
         assert 0 <= prediction['confidence'] <= 1
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_make_prediction_unknown_player(self, mock_client, mock_api_key,
                                            sample_features_data):
         """Test prediction for unknown player."""
@@ -244,7 +244,7 @@ class TestMakePrediction:
 
         assert prediction is None
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_make_prediction_model_disagreement(self, mock_client, mock_api_key,
                                                sample_features_data):
         """Test prediction when models disagree."""
@@ -289,7 +289,7 @@ class TestMakePrediction:
 class TestDisplayPredictions:
     """Test prediction display functionality."""
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_display_predictions_with_results(self, mock_client, mock_api_key, capfd):
         """Test displaying predictions with results."""
         predictor = DailyPredictor(api_key=mock_api_key)
@@ -313,7 +313,7 @@ class TestDisplayPredictions:
         assert 'LeBron James' in captured.out
         assert 'OVER' in captured.out
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_display_predictions_empty(self, mock_client, mock_api_key, capfd):
         """Test displaying empty predictions."""
         predictor = DailyPredictor(api_key=mock_api_key)
@@ -326,7 +326,7 @@ class TestDisplayPredictions:
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_prediction_with_nan_values(self, mock_client, mock_api_key):
         """Test handling of NaN values in features."""
         predictor = DailyPredictor(api_key=mock_api_key)
@@ -361,7 +361,7 @@ class TestEdgeCases:
         # Might be None or valid prediction depending on data
         assert prediction is None or isinstance(prediction, dict)
 
-    @patch('daily_predictions.NBAOddsClient')
+    @patch('final_predictions_optimized.NBAOddsClient')
     def test_prediction_with_missing_features(self, mock_client, mock_api_key,
                                              sample_features_data):
         """Test prediction when required features are missing."""
