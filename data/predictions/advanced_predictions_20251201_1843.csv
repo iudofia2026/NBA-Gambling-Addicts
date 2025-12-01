@@ -1,0 +1,19 @@
+player_name,market_type,prop_line,recommendation,predicted_value,line_diff,confidence,over_odds,bookmaker,game_time,usage_trend,matchup_rating,fatigue_level,hot_cold,pace_impact
+Tobias Harris,player_points,10.5,OVER,17.0,6.5,0.757,2.7,Bovada,2025-12-02 00:10:00+00:00,→,Neutral,Low,Neutral,Normal
+Tobias Harris,player_rebounds,4.5,OVER,7.6,3.1,0.779,2.26,FanDuel,2025-12-02 00:10:00+00:00,↑,Neutral,Low,Hot,Normal
+Tobias Harris,player_assists,1.5,OVER,1.8,0.3,0.774,2.5,DraftKings,2025-12-02 00:10:00+00:00,↓,Neutral,Low,Cold,Normal
+James Harden,player_assists,10.5,UNDER,7.2,-3.3,0.783,3.1,Bovada,2025-12-02 00:30:00+00:00,↓,Neutral,Low,Cold,Normal
+James Harden,player_points,21.5,UNDER,19.6,-1.9,0.775,3.1,Bovada,2025-12-02 00:30:00+00:00,↓,Neutral,Low,Cold,Normal
+James Harden,player_rebounds,6.5,UNDER,5.4,-1.1,0.767,2.8,Bovada,2025-12-02 00:30:00+00:00,↓,Neutral,Low,Cold,Normal
+Nikola Vucevic,player_assists,3.5,UNDER,1.6,-1.9,0.797,2.45,Bovada,2025-12-02 00:40:00+00:00,↓,Favorable,Low,Cold,Normal
+Nikola Vucevic,player_points,13.5,UNDER,13.1,-0.4,0.79,2.9,Bovada,2025-12-02 00:40:00+00:00,↓,Neutral,Low,Cold,Normal
+Nikola Vucevic,player_rebounds,10.5,UNDER,9.9,-0.6,0.791,2.8,Bovada,2025-12-02 00:40:00+00:00,→,Neutral,Low,Neutral,Normal
+Nikola Jokic,player_assists,11.5,UNDER,7.8,-3.7,0.775,2.85,Bovada,2025-12-02 02:10:00+00:00,↓,Neutral,Low,Cold,Normal
+Nikola Jokic,player_points,25.5,UNDER,23.9,-1.6,0.797,3.05,Bovada,2025-12-02 02:10:00+00:00,→,Neutral,Low,Neutral,Normal
+Nikola Jokic,player_rebounds,14.5,UNDER,13.0,-1.5,0.795,2.65,Bovada,2025-12-02 02:10:00+00:00,→,Neutral,Low,Neutral,Normal
+Kevin Durant,player_assists,2.5,OVER,3.4,0.9,0.753,3.1,Bovada,2025-12-02 02:10:00+00:00,↓,Neutral,Low,Cold,Normal
+Kevin Durant,player_points,21.5,OVER,27.1,5.6,0.799,2.9,Bovada,2025-12-02 02:10:00+00:00,→,Neutral,Low,Neutral,Normal
+Kevin Durant,player_rebounds,4.5,OVER,4.7,0.2,0.769,2.12,DraftKings,2025-12-02 02:10:00+00:00,↓,Neutral,Low,Cold,Normal
+Devin Booker,player_assists,8.5,UNDER,6.5,-2.0,0.756,2.9,Bovada,2025-12-02 03:10:00+00:00,↑,Neutral,Low,Hot,Normal
+Devin Booker,player_points,21.5,OVER,21.6,0.1,0.767,3.1,Bovada,2025-12-02 03:10:00+00:00,↓,Neutral,Low,Cold,Normal
+Devin Booker,player_rebounds,3.5,UNDER,3.1,-0.4,0.797,1.99,DraftKings,2025-12-02 03:10:00+00:00,→,Neutral,Low,Neutral,Normal

@@ -26,7 +26,7 @@ except ImportError:
     print("SHAP not available, install with: pip install shap")
 
 # Import modules
-from src.odds_api_client import NBAOddsClient
+from odds_api_client import NBAOddsClient
 
 class AdvancedFeatureEngineering:
     """
