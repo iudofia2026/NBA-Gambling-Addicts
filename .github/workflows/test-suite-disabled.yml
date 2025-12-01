@@ -1,0 +1,21 @@
+name: Test Suite (DISABLED)
+
+on:
+  push:
+    branches: [ main, prod-2, prod, dev, develop ]
+  pull_request:
+    branches: [ main, prod-2, prod ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  disabled:
+    name: Tests Currently Disabled
+    runs-on: ubuntu-latest
+    steps:
+    - name: Tests Disabled
+      run: |
+        echo "⚠️ Test suite is currently disabled"
+        echo "Tests are archived in tests/archived/ directory"
+        echo "To reactivate, see tests/archived/README.md"
