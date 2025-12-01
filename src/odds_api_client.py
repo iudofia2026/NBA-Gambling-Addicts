@@ -46,7 +46,7 @@ class NBAOddsClient:
         """Load the list of players we track from our feature data."""
         try:
             # Load from our engineered features to get current player list
-            data = pd.read_csv('../data/processed/engineered_features.csv')
+            data = pd.read_csv('data/processed/engineered_features.csv')
             players = data['fullName'].unique().tolist()
             print(f"✓ Loaded {len(players)} tracked players from our model")
             return players
