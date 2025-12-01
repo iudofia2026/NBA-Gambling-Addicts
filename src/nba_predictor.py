@@ -1234,11 +1234,11 @@ class AdvancedNBAPredictor:
                     'over_odds': data['over_odds'],
                     'bookmaker': data['bookmaker'],
                     'game_time': data['game_time'],
-                    'usage_trend': pred.get('advanced_insights', {}).get('usage_trend', 'N/A'),
-                    'matchup_rating': pred.get('advanced_insights', {}).get('matchup_rating', 'N/A'),
-                    'fatigue_level': pred.get('advanced_insights', {}).get('fatigue_level', 'N/A'),
-                    'hot_cold': pred.get('advanced_insights', {}).get('hot_cold', 'N/A'),
-                    'pace_impact': pred.get('advanced_insights', {}).get('pace_impact', 'N/A')
+                    'usage_trend': data.get('usage_trend', 'N/A'),
+                    'matchup_rating': data.get('matchup_rating', 'N/A'),
+                    'fatigue_level': data.get('fatigue_level', 'N/A'),
+                    'hot_cold': data.get('hot_cold', 'N/A'),
+                    'pace_impact': data.get('pace_impact', 'N/A')
                 })
 
         pd.DataFrame(flattened_predictions).to_csv(output_file, index=False)
