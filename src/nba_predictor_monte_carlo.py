@@ -11,7 +11,7 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-# Import the main predictor
+# Import the odds client
 from odds_api_client import NBAOddsClient
 
 class MonteCarloNBAPredictor:
